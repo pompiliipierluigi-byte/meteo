@@ -68,7 +68,7 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
   - **riduzione vele bianche** nelle portanti, default **50 %**, che si moltiplica all'efficienza → con i default le portanti a vele bianche valgono 80 % × 50 % = **40 %** della polare ORC;
   - **soglia motore** con due modalità a scelta (§5.2):
     - **"Soglia velocità"**: motore se la migliore velocità a vela possibile è sotto *X* nodi;
-    - **"Soglia VMG"**: motore se la migliore VMG verso l'arrivo a vela è sotto *X* nodi (es. controvento, bolina a 7 kn ma VMG 4 kn, soglia 3 → si resta a vela; VMG 2.5 → motore);
+    - **"Soglia VMG"**: motore se la migliore VMG a vela verso l'arrivo (o verso il prossimo waypoint, se la rotta ne ha) è sotto *X* nodi (es. controvento, bolina a 7 kn ma VMG 4 kn, soglia 3 → si resta a vela; VMG 2.5 → motore);
   - valori ammessi: efficienza 30–120 %, riduzione vele bianche 20–100 %, soglia 0–10 kn.
 - Per ogni barca: **velocità a motore** *Y* (nodi) e flag "applica efficienza crociera" (default sì per barche ORC, no per polari manuali/CSV, che si presume siano già quelle reali).
 - Anteprima grafica della polare (diagramma polare, una curva per TWS) con i correttivi applicati, full e vele bianche a confronto.
@@ -309,7 +309,7 @@ Trigger `updated_at` su tutte le tabelle con quel campo. Indici su `user_id` e `
   - Esempio con i default: portanti a vele bianche = 0.80 × 0.50 = 40 % della polare ORC.
 - **Motore**, deciso per ogni punto dell'isocrona (non per singola prua):
   - modalità `speed`: se la massima velocità a vela su tutte le prue < `motor_threshold_kn` → motore;
-  - modalità `vmg`: se la massima VMG verso l'arrivo a vela (VMC: `bsp × cos(rotta − rilevamento dell'arrivo)`) < `motor_threshold_kn` → motore;
+  - modalità `vmg`: se la massima VMG a vela verso la meta corrente — arrivo o prossimo waypoint — (VMC: `bsp × cos(rotta − rilevamento della meta)`) < `motor_threshold_kn` → motore;
   - a motore: `bsp = motor_speed_kn` su qualsiasi prua (anche controvento); il passo è contato nelle ore di motore.
 
 ### 5.3 CSV
@@ -470,7 +470,7 @@ Griglia larga (~25 km) sulla mappa e griglia fine solo lungo la rotta, per non s
 ### Barca e polari
 
 **8. Quando si accende il motore?** ✅ *Deciso*: due modalità scelte nel profilo, "Soglia velocità" e "Soglia VMG" (§2.5, §5.2).
-Da confermare: per la VMG uso la VMG **verso l'arrivo** (non quella rispetto al vento), e la modalità predefinita è "Soglia VMG".
+VMG calcolata verso l'arrivo o verso il prossimo waypoint; modalità predefinita "Soglia VMG".
 
 **9. Vele bianche per barche importate da ORC** ✅ *Deciso*: efficienza crociera 80 % + vele bianche 50 % nelle portanti (= 40 %), modificabili nel profilo.
 
@@ -505,7 +505,8 @@ Ignoro isolotti sotto ~100 × 100 m per tenere leggero il file della costa?
 → Proposta: escluse ora, magari in futuro.
 
 **18. Waypoint intermedi obbligati** (es. passare per un canale preciso)
-→ Proposta: non ora.
+La regola motore li prevede già (VMG verso il prossimo waypoint).
+→ Proposta: sì, nella fase 3 (routing a tratte: ogni tratto parte all'ora d'arrivo del precedente).
 
 ### Account e dati
 
