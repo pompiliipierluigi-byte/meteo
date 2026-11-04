@@ -37,23 +37,24 @@ Riferimenti: [SPEC.md](SPEC.md) per i requisiti, [CLAUDE.md](CLAUDE.md) per conv
 
 **Obiettivo**: login, gestione barche e polari (ORC, manuale, CSV) salvate su Supabase.
 
-**Domande da chiudere prima**: 2, 8, 9, 10, 11, 19, 20, 21, 23.
+**Domande da chiudere prima**: 2, 10, 19, 21, 23 (8, 9, 11, 20 decise).
 
 **Passi**
 1. Migrazione SQL: `profiles`, `boats`, `polars`, trigger, policy RLS: `supabase/migrations/0001_init.sql`.
 2. Client Supabase e login/logout: `vendor/supabase/`, `js/data/supabase.js`, `js/ui/auth.js`.
-3. Modello polare (formato interno, interpolazione, correttivi, regola motore, VMG): `js/boats/polar.js` + test `tests/polar.test.js`.
+3. Modello polare (formato interno, interpolazione, efficienza crociera, vele bianche derivate, regola motore "Soglia velocità"/"Soglia VMG"): `js/boats/polar.js` + test `tests/polar.test.js`.
 4. Importazione/esportazione CSV con validazione: `js/boats/polar-csv.js` + test.
 5. Importazione ORC (indice, ricerca, conversione): `js/boats/orc.js`.
 6. CRUD barche e polari: `js/data/boats-repo.js`.
 7. Interfaccia barche: elenco, form, tabella polare editabile, correttivi, motore: `js/ui/boats-panel.js`, `js/ui/polar-table.js`.
-8. Diagramma polare in SVG: `js/ui/polar-chart.js`.
+8. Pagina profilo: correttivi polari, soglia motore, preferenze: `js/ui/profile-panel.js`, `js/data/profile-repo.js`.
+9. Diagramma polare in SVG (full e vele bianche a confronto): `js/ui/polar-chart.js`.
 
 **Fatto quando**
 - Due utenti di prova non vedono né modificano i dati l'uno dell'altro (verificato con chiamate dirette all'API REST con la chiave anon).
 - Una barca ORC importata riproduce le velocità della fonte nei nodi della tabella (test).
 - Un CSV di esempio (qtVlm/Expedition) si importa e riesporta identico; errori segnalati con riga/colonna.
-- Correttivi e soglia motore modificano il diagramma polare in tempo reale.
+- Con i default del profilo una polare ORC risulta all'80 % e le portanti a vele bianche al 40 % (test); modificando i valori nel profilo il diagramma si aggiorna subito.
 - Con Supabase in pausa/irraggiungibile l'app mostra un errore chiaro e la mappa meteo resta utilizzabile.
 
 ---

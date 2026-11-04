@@ -62,11 +62,16 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
   1. **Importazione ORC** da `https://jieter.github.io/orc-data/site/` (ricerca per nome, numero velico, nazione).
   2. **Inserimento manuale** (tabella editabile TWA × TWS).
   3. **Importazione CSV** (formato in §5.3).
-- Per ogni barca:
-  - correttivo % **bolina** (TWA < soglia, default 90°) e correttivo % **portanti** (TWA ≥ soglia); valori ammessi −50 % … +30 %;
-  - due set di polari: **full** (con spi/gennaker) e **vele bianche**;
-  - **soglia motore**: se la velocità stimata a vela è inferiore a *X* nodi, la barca procede a motore a *Y* nodi (X, Y per barca).
-- Anteprima grafica della polare (diagramma polare, una curva per TWS) con correttivi applicati.
+- Due set di polari: **full** (con spi/gennaker) e **vele bianche**. Le vele bianche si ricavano in automatico dalla full (§5.2); in alternativa si può inserire una polare vele bianche propria.
+- **Correttivi nella pagina profilo** (valori dell'utente, modificabili, applicati a tutte le sue barche):
+  - **efficienza crociera** in % della polare, separata per **bolina** (TWA < 90°) e **portanti** (TWA ≥ 90°); default **80 %** (−20 %: una barca da crociera rende meno della stessa barca in configurazione da regata del certificato ORC);
+  - **riduzione vele bianche** nelle portanti, default **50 %**, che si moltiplica all'efficienza → con i default le portanti a vele bianche valgono 80 % × 50 % = **40 %** della polare ORC;
+  - **soglia motore** con due modalità a scelta (§5.2):
+    - **"Soglia velocità"**: motore se la migliore velocità a vela possibile è sotto *X* nodi;
+    - **"Soglia VMG"**: motore se la migliore VMG verso l'arrivo a vela è sotto *X* nodi (es. controvento, bolina a 7 kn ma VMG 4 kn, soglia 3 → si resta a vela; VMG 2.5 → motore);
+  - valori ammessi: efficienza 30–120 %, riduzione vele bianche 20–100 %, soglia 0–10 kn.
+- Per ogni barca: **velocità a motore** *Y* (nodi) e flag "applica efficienza crociera" (default sì per barche ORC, no per polari manuali/CSV, che si presume siano già quelle reali).
+- Anteprima grafica della polare (diagramma polare, una curva per TWS) con i correttivi applicati, full e vele bianche a confronto.
 
 ### 2.6 Routing
 
@@ -98,9 +103,10 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 ### 2.9 Account e dati utente
 
 - Login con Supabase Auth (metodo da decidere, vedi Domande aperte).
-- Dati utente salvati su Supabase: barche, polari, rotte salvate (con eventuale finestra di partenza).
+- **Login obbligatorio** per tutto ciò che si salva: impostazioni del profilo, barche, polari, rotte (con eventuale finestra di partenza). Senza login si consultano solo mappa e meteo.
 - Row Level Security su tutte le tabelle (§4).
-- Senza login: consultazione mappa e meteo disponibile; barche/rotte → da decidere (vedi Domande aperte).
+- Pagina **profilo**: nome, correttivi polari e soglia motore (§2.5), preferenze (modello, layer).
+- **Esportazione del routage** consultabile offline (PDF, JPG o altro formato): prevista, formato e contenuti da definire in un secondo tempo (fuori dalle fasi 1–4).
 
 ### 2.10 PWA
 
@@ -193,7 +199,13 @@ Schema `public`. Tutte le tabelle hanno RLS attiva; chiavi primarie `uuid` (`gen
 | `id` | uuid | PK, = `auth.users.id`, `on delete cascade` |
 | `display_name` | text | nullable |
 | `default_boat_id` | uuid | FK → `boats.id`, `on delete set null`, nullable |
-| `settings` | jsonb | default `{}` (es. layer attivi, modello preferito, criteri finestra) |
+| `upwind_eff_pct` | numeric(5,1) | efficienza crociera in bolina, default 80, `check between 30 and 120` |
+| `downwind_eff_pct` | numeric(5,1) | efficienza crociera nelle portanti, default 80, `check between 30 and 120` |
+| `white_downwind_pct` | numeric(5,1) | riduzione vele bianche nelle portanti, default 50, `check between 20 and 100` |
+| `split_twa_deg` | numeric(4,1) | confine bolina/portanti, default 90 |
+| `motor_mode` | text | `check in ('speed','vmg')`, default `'vmg'` |
+| `motor_threshold_kn` | numeric(4,1) | soglia X, default 3.0 |
+| `settings` | jsonb | default `{}` (layer attivi, modello preferito, criteri finestra) |
 | `disclaimer_version` | int | ultima versione dell'avviso accettata |
 | `created_at`, `updated_at` | timestamptz | default `now()` |
 
@@ -211,11 +223,8 @@ Riga creata da trigger su inserimento in `auth.users`.
 | `source` | text | `check in ('orc','manual','csv')` |
 | `orc_ref` | text | identificativo ORC (numero velico/riferimento), nullable |
 | `orc_year` | int | anno del certificato, nullable |
-| `upwind_corr_pct` | numeric(5,1) | default 0, `check between -50 and 30` |
-| `downwind_corr_pct` | numeric(5,1) | default 0, `check between -50 and 30` |
-| `split_twa_deg` | numeric(4,1) | default 90 — soglia bolina/portanti |
-| `motor_threshold_kn` | numeric(4,1) | X, default 3.0 |
-| `motor_speed_kn` | numeric(4,1) | Y, default 6.0 |
+| `apply_efficiency` | boolean | applica l'efficienza crociera del profilo; default `true` se `source = 'orc'`, altrimenti `false` |
+| `motor_speed_kn` | numeric(4,1) | velocità a motore Y, default 6.0 |
 | `tack_penalty_s` | int | penalità virata/strambata, default 0 (vedi §6.5) |
 | `created_at`, `updated_at` | timestamptz | |
 
@@ -226,9 +235,9 @@ Riga creata da trigger su inserimento in `auth.users`.
 | `id` | uuid | PK |
 | `boat_id` | uuid | FK → `boats.id`, `on delete cascade`, `not null` |
 | `user_id` | uuid | FK → `auth.users.id`, `not null`, default `auth.uid()` (denormalizzato per RLS semplice) |
-| `kind` | text | `check in ('full','white')` |
+| `kind` | text | `check in ('full','white')`; la riga `white` è facoltativa (se manca, vele bianche derivate dalla full) |
 | `data` | jsonb | polare nel formato interno (§5.1) |
-| `source` | text | `orc` / `manual` / `csv` / `derived` |
+| `source` | text | `orc` / `manual` / `csv` |
 | `notes` | text | nullable |
 | `created_at`, `updated_at` | timestamptz | |
 | | | `unique (boat_id, kind)` |
@@ -292,8 +301,16 @@ Trigger `updated_at` su tutte le tabelle con quel campo. Indici su `user_id` e `
 - Bilineare su (TWA, TWS).
 - TWS < minimo tabella: interpolazione lineare verso 0 a TWS = 0. TWS > massimo: valore al massimo (nessuna estrapolazione).
 - TWA < angolo di bolina ottimo: zona morta, velocità a vela = 0 (la barca deve bordeggiare).
-- Correttivi: `bsp × (1 + upwind_corr_pct/100)` se TWA < `split_twa_deg`, altrimenti `downwind_corr_pct`.
-- Motore: se `bsp_vela < motor_threshold_kn` → `bsp = motor_speed_kn` in qualsiasi direzione e il passo è contato come "motore" (interpretazione da confermare, vedi Domande aperte).
+- **Velocità a vela effettiva** (correttivi del profilo, §4.1):
+  - `eff` = `upwind_eff_pct` se TWA < `split_twa_deg`, altrimenti `downwind_eff_pct` (solo se la barca ha `apply_efficiency`, altrimenti 100 %);
+  - set full: `bsp = bsp_polare × eff`;
+  - set vele bianche senza polare propria: `bsp = bsp_full × eff × white_downwind_pct` per TWA ≥ `split_twa_deg`, uguale al full in bolina;
+  - set vele bianche con polare propria: `bsp = bsp_white × eff`.
+  - Esempio con i default: portanti a vele bianche = 0.80 × 0.50 = 40 % della polare ORC.
+- **Motore**, deciso per ogni punto dell'isocrona (non per singola prua):
+  - modalità `speed`: se la massima velocità a vela su tutte le prue < `motor_threshold_kn` → motore;
+  - modalità `vmg`: se la massima VMG verso l'arrivo a vela (VMC: `bsp × cos(rotta − rilevamento dell'arrivo)`) < `motor_threshold_kn` → motore;
+  - a motore: `bsp = motor_speed_kn` su qualsiasi prua (anche controvento); il passo è contato nelle ore di motore.
 
 ### 5.3 CSV
 
@@ -316,7 +333,7 @@ TWA\TWS;6;8;10;12;14;16;20
 - Indice e dati da `https://jieter.github.io/orc-data/site/` (struttura dei file da verificare in fase 2: indice delle barche + un JSON per barca con sezione VPP: angoli, TWS, velocità, angoli/velocità ottimi di bolina e poppa).
 - Ricerca client-side sull'indice (cache IndexedDB).
 - Le polari ORC sono calcolate con vele da regata (spinnaker/gennaker nelle portanti) → importate come set **full**.
-- Set **vele bianche**: non fornito da ORC → derivato (proposta: stessa polare con riduzione nelle portanti oltre un TWA, editabile) oppure inserito a mano. Da confermare.
+- Set **vele bianche**: non fornito da ORC → derivato con la riduzione del profilo (§5.2); l'utente può sostituirlo con una polare propria.
 
 ---
 
@@ -452,24 +469,17 @@ Griglia larga (~25 km) sulla mappa e griglia fine solo lungo la rotta, per non s
 
 ### Barca e polari
 
-**8. Quando si accende il motore?** *(la più importante)*
-- a) **per direzione**: se in quella direzione a vela faccio meno di X nodi → motore (quindi anche controvento si va a motore invece di bordeggiare)
-- b) **solo con poco vento**: motore solo se in *nessuna* direzione supero X nodi a vela
-→ Proposta: b).
+**8. Quando si accende il motore?** ✅ *Deciso*: due modalità scelte nel profilo, "Soglia velocità" e "Soglia VMG" (§2.5, §5.2).
+Da confermare: per la VMG uso la VMG **verso l'arrivo** (non quella rispetto al vento), e la modalità predefinita è "Soglia VMG".
 
-**9. Vele bianche per barche importate da ORC** (ORC dà solo la polare con spi)
-- a) le ricavo in automatico riducendo le portanti, poi le correggi tu
-- b) le inserisci tu a mano
-→ Proposta: a).
+**9. Vele bianche per barche importate da ORC** ✅ *Deciso*: efficienza crociera 80 % + vele bianche 50 % nelle portanti (= 40 %), modificabili nel profilo.
 
 **10. Quale set usa il calcolo?**
 - a) lo scegli tu ogni volta (full / vele bianche)
 - b) automatico: vele bianche sopra una certa intensità di vento
 → Proposta: a).
 
-**11. Correttivo bolina/portanti**
-Confine a 90° di angolo dal vento, fisso o regolabile per barca?
-→ Proposta: 90° di default, regolabile.
+**11. Correttivo bolina/portanti** ✅ *Deciso*: nel profilo utente, confine a 90° (regolabile).
 
 **12. Limiti di sicurezza nel calcolo**
 Vuoi che il routing *eviti* zone con vento/raffiche/onda oltre un limite (oltre a filtrarle nella finestra di partenza)? E una penalità di tempo per virate e strambate?
@@ -503,10 +513,7 @@ Ignoro isolotti sotto ~100 × 100 m per tenere leggero il file della costa?
 - a) link via email · b) email + password · c) Google
 → Proposta: b) (il link via email gratuito di Supabase è limitato a poche email all'ora).
 
-**20. Senza login si possono usare barche e rotte?**
-- a) sì, salvate sul telefono, sincronizzate al login
-- b) no, login obbligatorio per barche e rotte
-→ Proposta: b), più semplice.
+**20. Senza login si possono usare barche e rotte?** ✅ *Deciso*: no, login obbligatorio per impostazioni, polari e rotte. Esportazione offline del routage (PDF/JPG/…) da definire più avanti.
 
 **21. Supabase**
 Hai già un progetto? Alla fase 2 mi servono URL e chiave pubblica (anon). Le tabelle le creo io con file SQL che incolli nella console, ok?
