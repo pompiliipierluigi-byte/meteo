@@ -16,4 +16,22 @@ export const it = {
     bar: 'Solo pianificazione — non usare per la navigazione',
     showAgain: 'Leggi l\'avviso',
   },
+  menu: {
+    open: 'Apri il menu',
+    close: 'Chiudi il menu',
+    title: 'Livelli e opzioni',
+    basemap: 'Mappa base',
+    overlays: 'Sovrapposizioni',
+  },
+  map: {
+    carto: 'CARTO chiara',
+    osm: 'OpenStreetMap',
+    openseamap: 'OpenSeaMap (segnalamenti)',
+  },
+  attribution: {
+    osm: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors (ODbL)',
+    carto: '© <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+    openseamap: 'Segnalamenti © <a href="https://www.openseamap.org" target="_blank" rel="noopener">OpenSeaMap</a> contributors',
+    openmeteo: 'Meteo: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0) — ICON-2I ItaliaMeteo-ARPAE, ECMWF IFS, NOAA GFS; onda: Open-Meteo Marine',
+  },
 };
