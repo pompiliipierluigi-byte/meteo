@@ -1,6 +1,7 @@
 // Avvio dell'app.
 
 import { APP_VERSION } from './config.js';
+import { initDisclaimer } from './ui/disclaimer.js';
 
 /** Registra il service worker (percorso relativo, scope = cartella dell'app). */
 function registerServiceWorker() {
@@ -15,6 +16,7 @@ function registerServiceWorker() {
 function start() {
   document.documentElement.dataset.version = APP_VERSION;
   registerServiceWorker();
+  initDisclaimer(document.getElementById('bottombar'));
 }
 
 start();

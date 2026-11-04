@@ -67,3 +67,59 @@ button {
 }
 
 .hidden { display: none !important; }
+
+/* Avviso di sicurezza */
+.disclaimer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem 0.75rem;
+  font-weight: 600;
+}
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--c-accent);
+  text-decoration: underline;
+  font-weight: 400;
+  font-size: inherit;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(5, 20, 35, 0.72);
+}
+
+.modal {
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  background: var(--c-bg);
+  box-shadow: var(--shadow);
+}
+
+.modal h2 { margin: 0 0 0.75rem; font-size: 1.25rem; }
+.modal p { margin: 0 0 1rem; line-height: 1.45; }
+
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--c-primary);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-primary:hover, .btn-primary:focus-visible { background: var(--c-primary-dark); }

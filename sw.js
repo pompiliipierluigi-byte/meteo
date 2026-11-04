@@ -1,7 +1,7 @@
 // Service worker: cache della shell dell'app.
 // Percorsi relativi allo scope (sottopercorso /meteo/ su GitHub Pages).
 
-const VERSION = '0.1.0-1';
+const VERSION = '0.1.0-2';
 const SHELL_CACHE = `shell-${VERSION}`;
 
 /** File della shell precaricati all'installazione. */
@@ -17,6 +17,8 @@ const SHELL = [
   './icons/favicon-32.png',
   './js/main.js',
   './js/config.js',
+  './js/i18n/it.js',
+  './js/ui/disclaimer.js',
 ];
 
 /** Attesa massima della rete prima di servire la copia in cache (ms). */
