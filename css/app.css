@@ -323,3 +323,25 @@ button {
 }
 .range-row input { grid-column: 1 / -1; width: 100%; accent-color: var(--c-primary); }
 .range-row output { font-variant-numeric: tabular-nums; color: var(--c-muted); }
+
+/* Legenda */
+.legend {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 800;
+  width: min(15rem, 60vw);
+  padding: 0.3rem 0.5rem 0.1rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  font-size: 0.65rem;
+  pointer-events: none;
+}
+.legend-scale { margin-bottom: 0.2rem; }
+.legend-title { font-weight: 600; margin-bottom: 0.1rem; }
+.legend-bar { height: 0.45rem; border-radius: 0.2rem; }
+.legend-ticks { position: relative; height: 0.9rem; margin: 0 0.4rem 0 0; }
+.legend-ticks span { position: absolute; top: 0.05rem; transform: translateX(-50%); white-space: nowrap; }
+.legend-ticks span:first-child { transform: none; }
+.legend-ticks span:last-child { transform: translateX(-70%); }

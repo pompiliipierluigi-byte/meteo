@@ -9,6 +9,7 @@ import { initDisclaimer } from './ui/disclaimer.js';
 import { createMap } from './map/map.js';
 import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.js';
 import { createWeatherLayers } from './map/weather-layers.js';
+import { createLegend } from './ui/legend.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
 import { createTimeSlider } from './ui/time-slider.js';
@@ -74,26 +75,37 @@ function start() {
     loadWeather(false);
   }, () => loadWeather(true));
 
-  const wx = createWeatherLayers(mapCtl.map, {
-    active: getPref('layers', {}),
-    opacity: getPref('opacity', 0.6),
+  const legend = createLegend(document.getElementById('map'));
+  const waveNames = { wave: it.layers.waveTotal, wwave: it.layers.waveWind, swell: it.layers.waveSwell };
+  /** @param {import('./map/weather-layers.js').LayerSettings} s */
+  const updateLegend = (s) => legend.update({
+    wind: s.windField || s.windArrows || (s.windParticles && !s.windField && s.wave === 'none'),
+    wave: s.wave === 'none' ? null : waveNames[s.wave],
   });
-  const saveLayers = () => setPref('layers', Object.fromEntries(
-    ['windField', 'windArrows', 'windParticles'].map((id) => [id, wx.isActive(/** @type {any} */ (id))]),
-  ));
+  const wx = createWeatherLayers(mapCtl.map, getPref('layers', {}), (s) => {
+    setPref('layers', s);
+    updateLegend(s);
+  });
+  const ls = wx.settings();
+  updateLegend(ls);
+
   const windSec = menu.addSection(it.layers.wind);
   for (const id of /** @type {const} */ (['windField', 'windArrows', 'windParticles'])) {
-    checkbox(windSec, it.layers[id], wx.isActive(id), (on) => {
-      wx.setActive(id, on);
-      saveLayers();
-    });
+    checkbox(windSec, it.layers[id], ls[id], (on) => wx.setToggle(id, on));
   }
+  const waveSec = menu.addSection(it.layers.wave);
+  radioGroup(waveSec, 'wave', [
+    { value: 'none', label: it.layers.waveNone },
+    { value: 'wave', label: it.layers.waveTotal },
+    { value: 'wwave', label: it.layers.waveWind },
+    { value: 'swell', label: it.layers.waveSwell },
+  ], ls.wave, (v) => wx.setWave(/** @type {any} */ (v)));
+  checkbox(waveSec, it.layers.waveArrows, ls.waveArrows, (on) => wx.setToggle('waveArrows', on));
+  checkbox(waveSec, it.layers.wavePeriods, ls.wavePeriods, (on) => wx.setToggle('wavePeriods', on));
+
   rangeRow(menu.addSection(it.layers.opacity), it.layers.opacity, {
-    min: 0.1, max: 1, step: 0.05, value: getPref('opacity', 0.6), format: (v) => `${Math.round(v * 100)} %`,
-  }, (v) => {
-    wx.setOpacity(v);
-    setPref('opacity', v);
-  });
+    min: 0.1, max: 1, step: 0.05, value: ls.opacity, format: (v) => `${Math.round(v * 100)} %`,
+  }, (v) => wx.setOpacity(v));
 
   radioGroup(menu.addSection(it.menu.basemap), 'basemap', [
     { value: 'carto', label: it.map.carto },
@@ -149,6 +161,7 @@ function start() {
       }
       slider.setMarker(wind.switchMs, it.model.autoSwitch);
       wx.setWind(wind.field);
+      wx.setWaves(waves.field);
       updateStatus();
       document.dispatchEvent(new CustomEvent('weather-updated'));
     } catch (err) {

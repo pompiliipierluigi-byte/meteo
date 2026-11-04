@@ -44,6 +44,17 @@ export const it = {
     windArrows: 'Frecce',
     windParticles: 'Particelle animate',
     opacity: 'Opacità campi colorati',
+    wave: 'Onda',
+    waveNone: 'Nessuna',
+    waveTotal: 'Onda totale',
+    waveWind: 'Onda da vento',
+    waveSwell: 'Swell (onda lunga)',
+    waveArrows: 'Frecce di direzione',
+    wavePeriods: 'Etichette del periodo (s)',
+  },
+  legend: {
+    wind: 'Vento (nodi)',
+    wave: 'Onda (m)',
   },
   time: {
     label: 'Ora della previsione',
