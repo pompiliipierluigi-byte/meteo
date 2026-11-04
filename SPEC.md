@@ -417,37 +417,104 @@ OSM land polygons (osmdata.openstreetmap.de, versione "split", WGS84, licenza OD
 
 ## 9. Domande aperte
 
-**Hosting e progetto**
-1. Il repository si chiama `Meteo-`: GitHub Pages lo pubblicherebbe su `/Meteo-/`, non `/meteo/`. Come si ottiene `/meteo/`? (rinominare il repo in `meteo`, cartella `meteo/` dentro il repo del sito utente `<utente>.github.io`, dominio personalizzato?) I percorsi relativi funzionano comunque, ma serve per il `redirect` di Supabase Auth e lo `scope` del service worker.
-2. Uso solo personale o anche di altre persone? Possibile uso commerciale (cambia le condizioni Open-Meteo)?
+Per ogni domanda c'è la mia **proposta**: se ti va bene basta rispondere "ok", altrimenti scegli un'altra opzione. Numeri fissi (PIANO.md li richiama).
 
-**Meteo**
-3. Mappa base: OSM standard (policy d'uso restrittiva), CARTO, Esri Ocean, altro? Overlay OpenSeaMap sì/no?
-4. "GFS come confronto": basta poterlo selezionare come modello, o vuoi un confronto esplicito (due modelli affiancati, differenza, rotta calcolata con entrambi)?
-5. Orizzonte massimo da mostrare/usare per il routing (ECMWF arriva a ~10–15 giorni, ma oltre 5 giorni ha poco senso per il routing)?
-6. Passo della griglia: accetti 0.25° per la mappa panoramica e una griglia fine solo nel corridoio di rotta, per restare nelle quote?
-7. Onda: basta l'onda totale o vuoi anche onda da vento e swell separati come layer?
+### Hosting e uso
 
-**Polari e barca**
-8. Regola motore: va applicata **per prua** (in zona morta o con poco vento su quella prua si va a motore → anche controvento diretto) oppure solo quando **nessuna** prua a vela supera X nodi (calma)? Cambia molto il risultato di bolina.
-9. Set "vele bianche": come lo otteniamo se la fonte è ORC? (derivato con riduzione automatica nelle portanti / inserito a mano / copia del full da modificare)
-10. Quale set usa il routing: scelto dall'utente per ogni calcolo, oppure passaggio automatico (es. vele bianche sopra una certa TWS)?
-11. Soglia bolina/portanti fissa a 90° TWA o configurabile per barca? Correttivo a gradino o raccordato?
-12. Vuoi una penalità per virate/strambate? Limiti di sicurezza (vento max, raffica max, onda max) che rendano un tratto **non navigabile** per il routing, oltre che come filtri nella finestra di partenza?
-13. Vuoi una riduzione della velocità in funzione dell'onda (es. % per metro d'onda di prua)?
+**1. Indirizzo dell'app** — Il repo ora si chiama `meteo`, quindi l'app sarà su `pompiliipierluigi-byte.github.io/meteo/`.
+→ Proposta: confermi questo indirizzo (niente dominio personalizzato).
 
-**Routing**
-14. Distanza minima dalla costa da mantenere (es. 0.2 NM) o solo "non attraversare la terra"?
-15. Isole/scogli minimi: va bene ignorare quelli sotto ~0.01 km² (≈ 100 × 100 m)?
-16. Criterio di "partenza migliore": durata minima? minimo motore? punteggio combinato con pesi tuoi?
-17. Correnti: escluse anche in futuro, o da prevedere (Open-Meteo Marine fornisce le correnti superficiali)?
-18. Punti di passaggio intermedi (waypoint obbligati) servono?
+**2. Chi la usa?** — Solo tu / anche amici / pubblico. Uso commerciale?
+→ Proposta: solo uso personale, non commerciale (Open-Meteo gratuito lo richiede).
 
-**Account e dati**
-19. Metodo di login: magic link via email, email+password, Google? (il magic link con SMTP gratuito Supabase è limitato)
-20. Senza login l'app deve permettere di usare barche e routing salvando in locale (IndexedDB), con sincronizzazione al login? Oppure login obbligatorio per barche/rotte?
-21. Il progetto Supabase esiste già? Mi servono URL e chiave anon (pubblica) quando arriviamo alla fase 2. Chi applica le migrazioni SQL?
-22. Le rotte salvate vanno condivise (link pubblico in sola lettura)? Cambierebbe le policy RLS.
+### Meteo e mappa
 
-**Dati esterni**
-23. Licenza/condizioni dei dati ORC (jieter/orc-data): uso personale ok? Per un'app pubblica va verificato.
+**3. Mappa di sfondo**
+- a) OSM standard · b) CARTO chiara · c) Esri Ocean
+- + segnalamenti nautici OpenSeaMap sì/no
+→ Proposta: b) CARTO + OpenSeaMap attivabile.
+
+**4. GFS "come confronto"**
+- a) basta poterlo scegliere nel menu modelli
+- b) confronto esplicito (due modelli affiancati o rotta calcolata con entrambi)
+→ Proposta: a) per ora.
+
+**5. Quanti giorni di previsione?**
+→ Proposta: mappa fino a 7 giorni, routing fino a 5.
+
+**6. Dettaglio della griglia meteo**
+Griglia larga (~25 km) sulla mappa e griglia fine solo lungo la rotta, per non superare i limiti gratuiti di Open-Meteo.
+→ Proposta: ok così.
+
+**7. Onda**
+- a) solo onda totale · b) anche onda da vento e onda lunga (swell) separate
+→ Proposta: a) sulla mappa, b) solo nel popup al tocco.
+
+### Barca e polari
+
+**8. Quando si accende il motore?** *(la più importante)*
+- a) **per direzione**: se in quella direzione a vela faccio meno di X nodi → motore (quindi anche controvento si va a motore invece di bordeggiare)
+- b) **solo con poco vento**: motore solo se in *nessuna* direzione supero X nodi a vela
+→ Proposta: b).
+
+**9. Vele bianche per barche importate da ORC** (ORC dà solo la polare con spi)
+- a) le ricavo in automatico riducendo le portanti, poi le correggi tu
+- b) le inserisci tu a mano
+→ Proposta: a).
+
+**10. Quale set usa il calcolo?**
+- a) lo scegli tu ogni volta (full / vele bianche)
+- b) automatico: vele bianche sopra una certa intensità di vento
+→ Proposta: a).
+
+**11. Correttivo bolina/portanti**
+Confine a 90° di angolo dal vento, fisso o regolabile per barca?
+→ Proposta: 90° di default, regolabile.
+
+**12. Limiti di sicurezza nel calcolo**
+Vuoi che il routing *eviti* zone con vento/raffiche/onda oltre un limite (oltre a filtrarle nella finestra di partenza)? E una penalità di tempo per virate e strambate?
+→ Proposta: limiti sì (impostabili, disattivati di default); penalità virata no.
+
+**13. L'onda rallenta la barca?**
+→ Proposta: no in questa versione (le durate saranno un po' ottimistiche).
+
+### Routing
+
+**14. Distanza minima dalla costa**
+→ Proposta: 0.3 NM, regolabile.
+
+**15. Scogli piccoli**
+Ignoro isolotti sotto ~100 × 100 m per tenere leggero il file della costa?
+→ Proposta: sì.
+
+**16. "Partenza migliore" = ?**
+- a) la più veloce · b) meno ore di motore · c) mix con pesi tuoi
+→ Proposta: a), scartando le partenze oltre i limiti di vento/onda impostati.
+
+**17. Correnti marine**
+→ Proposta: escluse ora, magari in futuro.
+
+**18. Waypoint intermedi obbligati** (es. passare per un canale preciso)
+→ Proposta: non ora.
+
+### Account e dati
+
+**19. Come si fa il login?**
+- a) link via email · b) email + password · c) Google
+→ Proposta: b) (il link via email gratuito di Supabase è limitato a poche email all'ora).
+
+**20. Senza login si possono usare barche e rotte?**
+- a) sì, salvate sul telefono, sincronizzate al login
+- b) no, login obbligatorio per barche e rotte
+→ Proposta: b), più semplice.
+
+**21. Supabase**
+Hai già un progetto? Alla fase 2 mi servono URL e chiave pubblica (anon). Le tabelle le creo io con file SQL che incolli nella console, ok?
+→ Proposta: sì.
+
+**22. Rotte condivisibili con un link pubblico?**
+→ Proposta: no per ora.
+
+**23. Dati ORC**
+Per uso personale non ci sono problemi; per un'app pubblica andrebbe verificata la licenza.
+→ Proposta: legata alla risposta 2.
