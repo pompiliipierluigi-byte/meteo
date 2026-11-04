@@ -216,3 +216,36 @@ button {
 /* Leaflet */
 .leaflet-container { font: inherit; font-size: 0.8rem; }
 .leaflet-control-attribution { max-width: 70vw; font-size: 0.65rem; line-height: 1.3; }
+
+/* Stato del modello e aggiornamento */
+.model-status {
+  margin-left: auto;
+  font-size: 0.75rem;
+  text-align: right;
+  line-height: 1.2;
+  opacity: 0.9;
+}
+.refresh-btn:disabled { opacity: 0.6; cursor: default; }
+.refresh-btn.spin span { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Riga di avvisi */
+.notice {
+  position: absolute;
+  top: calc(var(--bar-h) + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.25rem 0 0.75rem;
+  background: #e8f1f8;
+  color: var(--c-fg);
+  font-size: 0.8rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.notice span { flex: 1 1 auto; padding: 0.35rem 0; }
+.notice .icon-btn { height: 2rem; min-width: 2rem; font-size: 0.9rem; }
+.notice[data-kind='error'] { background: #fde2e1; color: #7a1410; }
+.notice[data-kind='warn'] { background: var(--c-warn-bg); color: var(--c-warn-fg); }
