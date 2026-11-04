@@ -41,7 +41,7 @@ export function createMap(el) {
   );
 
   const map = L.map(el, {
-    minZoom: 6,
+    minZoom: 5,
     maxZoom: 16,
     maxBounds,
     maxBoundsViscosity: 1.0,

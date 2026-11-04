@@ -7,7 +7,8 @@ import { getPref, setPref } from './lib/prefs.js';
 import { formatShortDateTime } from './lib/format.js';
 import { initDisclaimer } from './ui/disclaimer.js';
 import { createMap } from './map/map.js';
-import { createSideMenu, radioGroup, checkbox } from './ui/side-menu.js';
+import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.js';
+import { createWeatherLayers } from './map/weather-layers.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
 import { createTimeSlider } from './ui/time-slider.js';
@@ -73,6 +74,27 @@ function start() {
     loadWeather(false);
   }, () => loadWeather(true));
 
+  const wx = createWeatherLayers(mapCtl.map, {
+    active: getPref('layers', {}),
+    opacity: getPref('opacity', 0.6),
+  });
+  const saveLayers = () => setPref('layers', Object.fromEntries(
+    ['windField', 'windArrows', 'windParticles'].map((id) => [id, wx.isActive(/** @type {any} */ (id))]),
+  ));
+  const windSec = menu.addSection(it.layers.wind);
+  for (const id of /** @type {const} */ (['windField', 'windArrows', 'windParticles'])) {
+    checkbox(windSec, it.layers[id], wx.isActive(id), (on) => {
+      wx.setActive(id, on);
+      saveLayers();
+    });
+  }
+  rangeRow(menu.addSection(it.layers.opacity), it.layers.opacity, {
+    min: 0.1, max: 1, step: 0.05, value: getPref('opacity', 0.6), format: (v) => `${Math.round(v * 100)} %`,
+  }, (v) => {
+    wx.setOpacity(v);
+    setPref('opacity', v);
+  });
+
   radioGroup(menu.addSection(it.menu.basemap), 'basemap', [
     { value: 'carto', label: it.map.carto },
     { value: 'osm', label: it.map.osm },
@@ -84,9 +106,11 @@ function start() {
   const slider = createTimeSlider(bottombar, (tMs) => {
     state.tMs = tMs;
     updateStatus();
+    wx.setTime(tMs);
     document.dispatchEvent(new CustomEvent('time-changed'));
   });
   state.tMs = slider.get();
+  wx.setTime(state.tMs);
 
   /** Aggiorna l'indicazione del modello effettivo e del run per l'ora selezionata. */
   function updateStatus() {
@@ -124,6 +148,7 @@ function start() {
         notice.hide();
       }
       slider.setMarker(wind.switchMs, it.model.autoSwitch);
+      wx.setWind(wind.field);
       updateStatus();
       document.dispatchEvent(new CustomEvent('weather-updated'));
     } catch (err) {

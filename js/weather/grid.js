@@ -265,3 +265,29 @@ export function sample(field, name, lat, lon, tMs) {
   if (!Number.isFinite(b)) return a;
   return a + (b - a) * ti.w;
 }
+
+/**
+ * Campionatore per un istante fissato: l'indice temporale si calcola una volta sola
+ * (rendering di molti punti alla stessa ora).
+ * @param {WeatherField} field
+ * @param {number} tMs
+ * @returns {(name: string, lat: number, lon: number) => number}
+ */
+export function sampler(field, tMs) {
+  const ti = timeIndex(field.timesMs, tMs);
+  const plane = field.grid.nx * field.grid.ny;
+  if (!ti) return () => NaN;
+  const off0 = ti.i0 * plane;
+  const off1 = (ti.i0 + 1) * plane;
+  const w = ti.w;
+  return (name, lat, lon) => {
+    const arr = field.vars[name];
+    if (!arr) return NaN;
+    const a = bilinear(arr, field.grid, off0, lat, lon);
+    if (w === 0) return a;
+    const b = bilinear(arr, field.grid, off1, lat, lon);
+    if (!Number.isFinite(a)) return b;
+    if (!Number.isFinite(b)) return a;
+    return a + (b - a) * w;
+  };
+}

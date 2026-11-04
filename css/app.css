@@ -314,3 +314,12 @@ button {
   .ts-btn { min-width: 2.1rem; }
   .ts-label { font-size: 0.82rem; }
 }
+
+.range-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.5rem;
+  padding: 0.25rem 0;
+}
+.range-row input { grid-column: 1 / -1; width: 100%; accent-color: var(--c-primary); }
+.range-row output { font-variant-numeric: tabular-nums; color: var(--c-muted); }

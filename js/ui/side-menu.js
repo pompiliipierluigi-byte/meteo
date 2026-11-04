@@ -131,3 +131,37 @@ export function checkbox(parent, label, checked, onChange) {
   parent.append(row);
   return input;
 }
+
+/**
+ * Cursore numerico con etichetta.
+ * @param {HTMLElement} parent
+ * @param {string} label
+ * @param {{min: number, max: number, step: number, value: number, format?: (v: number) => string}} cfg
+ * @param {(value: number) => void} onChange
+ * @returns {HTMLInputElement}
+ */
+export function rangeRow(parent, label, cfg, onChange) {
+  const id = `g${++uid}`;
+  const row = document.createElement('div');
+  row.className = 'range-row';
+  const lab = document.createElement('label');
+  lab.htmlFor = id;
+  lab.textContent = label;
+  const out = document.createElement('output');
+  const input = document.createElement('input');
+  input.type = 'range';
+  input.id = id;
+  input.min = String(cfg.min);
+  input.max = String(cfg.max);
+  input.step = String(cfg.step);
+  input.value = String(cfg.value);
+  const fmt = cfg.format ?? String;
+  out.textContent = fmt(cfg.value);
+  input.addEventListener('input', () => {
+    out.textContent = fmt(Number(input.value));
+    onChange(Number(input.value));
+  });
+  row.append(lab, out, input);
+  parent.append(row);
+  return input;
+}

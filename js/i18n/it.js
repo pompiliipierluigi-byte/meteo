@@ -38,6 +38,13 @@ export const it = {
     refresh: 'Aggiorna i dati meteo',
     autoSwitch: 'Da qui ECMWF',
   },
+  layers: {
+    wind: 'Vento',
+    windField: 'Campo colorato (intensità)',
+    windArrows: 'Frecce',
+    windParticles: 'Particelle animate',
+    opacity: 'Opacità campi colorati',
+  },
   time: {
     label: 'Ora della previsione',
     minusDay: '−1 giorno',
