@@ -354,3 +354,4 @@ button {
 .probe th { text-align: left; font-weight: 400; color: var(--c-muted); padding: 0.1rem 0.6rem 0.1rem 0; white-space: nowrap; vertical-align: top; }
 .probe td { padding: 0.1rem 0; }
 .probe-model { margin-top: 0.35rem; font-size: 0.7rem; color: var(--c-muted); }
+#app:has(.notice:not(.hidden)) .legend { top: 2.6rem; }

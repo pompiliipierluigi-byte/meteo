@@ -158,12 +158,7 @@ function start() {
       if (seq !== loadSeq) return;
       state.wind = wind;
       state.waves = waves;
-      const stale = wind.stale || waves.stale;
-      if (stale) {
-        notice.show(fill(it.notice.stale, { date: formatShortDateTime(Math.min(wind.fetchedMs, waves.fetchedMs)) }), 'warn');
-      } else {
-        notice.hide();
-      }
+      showDataBanner();
       slider.setMarker(wind.switchMs, it.model.autoSwitch);
       wx.setWind(wind.field);
       wx.setWaves(waves.field);
@@ -173,11 +168,33 @@ function start() {
     } catch (err) {
       if (seq !== loadSeq) return;
       console.error(err);
+      if (!navigator.onLine && !state.wind) {
+        notice.show(it.notice.offlineNoData, 'warn');
+        return;
+      }
       notice.show(err?.quota ? it.notice.quota : fill(it.notice.error, { msg: err?.message ?? String(err) }), 'error');
     } finally {
       if (seq === loadSeq) picker.setBusy(false);
     }
   }
+
+  /**
+   * Banner sullo stato dei dati: offline o aggiornamento non riuscito → "dati del …" (SPEC §2.10).
+   */
+  function showDataBanner() {
+    const { wind, waves } = state;
+    if (!wind || !waves) {
+      if (!navigator.onLine) notice.show(it.notice.offlineNoData, 'warn');
+      return;
+    }
+    const date = formatShortDateTime(Math.min(wind.fetchedMs, waves.fetchedMs));
+    if (!navigator.onLine) notice.show(fill(it.notice.offline, { date }), 'warn');
+    else if (wind.stale || waves.stale) notice.show(fill(it.notice.stale, { date }), 'warn');
+    else notice.hide();
+  }
+
+  window.addEventListener('offline', showDataBanner);
+  window.addEventListener('online', () => loadWeather(false));
 
   loadWeather(false);
 }

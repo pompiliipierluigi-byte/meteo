@@ -13,10 +13,12 @@ const BASEMAPS = {
   carto: () => L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     subdomains: 'abcd',
     maxZoom: 18,
+    crossOrigin: true,
     attribution: `${it.attribution.osm} ${it.attribution.carto}`,
   }),
   osm: () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
+    crossOrigin: true,
     attribution: it.attribution.osm,
   }),
 };

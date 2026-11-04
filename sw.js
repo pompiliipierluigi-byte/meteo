@@ -1,8 +1,14 @@
-// Service worker: cache della shell dell'app.
+// Service worker: cache della shell dell'app e delle tile di mappa già viste.
 // Percorsi relativi allo scope (sottopercorso /meteo/ su GitHub Pages).
+// I dati meteo non passano da qui: sono in IndexedDB (js/weather/cache.js), consultabili offline.
 
-const VERSION = '0.1.0-10';
+const VERSION = '0.1.0-11';
 const SHELL_CACHE = `shell-${VERSION}`;
+/** Cache delle tile (conservata tra le versioni), con numero massimo di elementi. */
+const TILE_CACHE = 'tiles-v1';
+const TILE_MAX_ENTRIES = 800;
+/** Host delle tile servite con CORS (risposte non opache: occupano lo spazio reale). */
+const TILE_HOSTS = /(^|\.)basemaps\.cartocdn\.com$|^tile\.openstreetmap\.org$/;
 
 /** File della shell precaricati all'installazione. */
 const SHELL = [
@@ -78,8 +84,38 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     event.respondWith(networkFirst(req, SHELL_CACHE));
+  } else if (TILE_HOSTS.test(url.hostname)) {
+    event.respondWith(tileCacheFirst(req));
   }
 });
+
+/**
+ * Tile: cache se presente (consultazione offline delle zone già viste), altrimenti rete.
+ * Nessun precaricamento di tile non richieste (policy dei fornitori).
+ * @param {Request} req
+ * @returns {Promise<Response>}
+ */
+async function tileCacheFirst(req) {
+  const cache = await caches.open(TILE_CACHE);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok && res.type === 'cors') {
+    await cache.put(req, res.clone());
+    trimCache(cache, TILE_MAX_ENTRIES);
+  }
+  return res;
+}
+
+/**
+ * Elimina gli elementi più vecchi oltre il limite (ordine di inserimento).
+ * @param {Cache} cache
+ * @param {number} max
+ */
+async function trimCache(cache, max) {
+  const keys = await cache.keys();
+  for (let i = 0; i < keys.length - max; i++) await cache.delete(keys[i]);
+}
 
 /**
  * Rete con timeout, poi cache. Le risposte valide aggiornano la cache.

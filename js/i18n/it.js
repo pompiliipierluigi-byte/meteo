@@ -83,7 +83,9 @@ export const it = {
     loadingStart: 'Carico i dati meteo…',
     error: 'Dati meteo non disponibili: {msg}',
     quota: 'Limite di richieste Open-Meteo raggiunto: riprova più tardi.',
-    stale: 'Aggiornamento non riuscito: mostro i dati scaricati il {date}.',
+    stale: 'Aggiornamento non riuscito: mostro i dati del {date}.',
+    offline: 'Sei offline: mostro i dati del {date}.',
+    offlineNoData: 'Sei offline e non ci sono dati meteo salvati su questo dispositivo.',
     close: 'Chiudi',
   },
   attribution: {
