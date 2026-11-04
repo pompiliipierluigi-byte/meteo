@@ -4,6 +4,6 @@ PWA di weather routing per barca a vela in Adriatico: mappa di vento e onda (Ope
 
 > Strumento di pianificazione, **non di sicurezza**.
 
-- [SPEC.md](SPEC.md) — requisiti, architettura, dati, algoritmo, limiti, domande aperte
+- [SPEC.md](SPEC.md) — requisiti, architettura, dati, algoritmo, limiti, decisioni
 - [PIANO.md](PIANO.md) — fasi di sviluppo e criteri di completamento
 - [CLAUDE.md](CLAUDE.md) — stack, vincoli, convenzioni, struttura dei file

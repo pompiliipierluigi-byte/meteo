@@ -17,7 +17,11 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 
 **Area**: lat 39.8–45.8 N, lon 12.0–19.7 E (bounding box `BBOX`). Comprende il Canale d'Otranto settentrionale, la costa italiana da Santa Maria di Leuca a Trieste, la costa slovena, croata (isole comprese), montenegrina e albanese settentrionale.
 
-**Escluso da questa versione**: file GRIB, correnti marine (vedi Domande aperte), AIS, tracciamento in tempo reale, notifiche push, integrazione con strumenti di bordo (NMEA).
+**Utenti**: uso personale e di pochi amici/equipaggio (2–4 persone), **non commerciale**. Ogni utente ha il proprio account e i propri dati.
+
+**Escluso da questa versione (fasi 1–4)**: file GRIB, AIS, tracciamento in tempo reale, notifiche push, integrazione con strumenti di bordo (NMEA), condivisione di rotte dentro l'app.
+
+**Previsto dopo le fasi 1–4**: esportazione del routage per condivisione e consultazione offline (PDF/JPG/altro, da definire); confronto esplicito tra modelli (stessa rotta calcolata con due modelli, sovrapposta).
 
 ---
 
@@ -26,7 +30,8 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 ### 2.1 Mappa
 
 - Mappa Leaflet a tutto schermo, centrata su `BBOX`, con limiti di pan (`maxBounds` = BBOX + margine).
-- Mappa base: tile raster (fornitore da decidere, vedi Domande aperte), con overlay opzionale OpenSeaMap (segnalamenti).
+- Mappa base: **CARTO chiara** (predefinita) o **OpenStreetMap** standard; overlay **OpenSeaMap** (segnalamenti) attivabile.
+- **Menu laterale a scomparsa** con: mappa base, overlay, layer meteo (vento, onda totale, onda da vento, swell, correnti), modello, opacità.
 - Tocco su un punto → popup "sonda" con i valori all'ora selezionata: vento (nodi, direzione di provenienza), raffica, onda (m, direzione di provenienza, periodo s), modello usato.
 
 ### 2.2 Layer vento
@@ -42,17 +47,18 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Campo colorato per altezza significativa (m), scala 0–0.5–1–1.5–2–3–4+ m.
 - Frecce di direzione di provenienza.
 - Periodo (s) visibile nella sonda e, opzionalmente, come etichette su griglia diradata.
-- Usa la variabile combinata (mare totale); onda da vento e swell separati disponibili solo nella sonda (se forniti dall'API).
+- Tre layer attivabili dal menu: **onda totale**, **onda da vento**, **swell** (ciascuno con altezza, direzione, periodo).
+- Layer **correnti** superficiali (velocità in nodi e direzione di destinazione), da fase 3.
 
 ### 2.4 Cursore temporale e modello
 
-- Cursore orario dall'ora corrente fino alla fine dell'orizzonte del modello scelto; pulsanti ±1 h, ±1 giorno, "play".
+- Cursore orario dall'ora corrente fino a **+5 giorni** (orizzonte massimo per mappa e routing); pulsanti ±1 h, ±1 giorno, "play".
 - Orari mostrati in ora locale `Europe/Rome`; internamente tutto in UTC.
 - Selettore modello:
   - **Auto** (predefinito): ICON-2I per le prime 72 h, ECMWF oltre.
   - **ICON-2I** (solo).
   - **ECMWF** (solo).
-  - **GFS** (confronto).
+  - **GFS** (selezionabile come gli altri; confronto esplicito previsto dopo le fasi 1–4).
 - Indicazione visibile del modello effettivo per l'ora selezionata e dell'orario di emissione (run) del dato.
 
 ### 2.5 Barche e polari
@@ -75,8 +81,15 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 
 ### 2.6 Routing
 
-- Input: partenza, arrivo, ora di partenza, barca, set di polari (full / vele bianche), modello.
-- **Partenza**: tocco su mappa oppure posizione GPS (`navigator.geolocation`). **Arrivo**: tocco su mappa. Marcatori trascinabili.
+- Input: partenza, arrivo, eventuali **waypoint intermedi**, ora di partenza, barca, set di polari (**scelto dall'utente a ogni calcolo**: full / vele bianche), modello.
+- **Partenza**: tocco su mappa oppure posizione GPS (`navigator.geolocation`). **Arrivo** e **waypoint**: tocco su mappa. Marcatori trascinabili; waypoint riordinabili ed eliminabili.
+- **Correnti** superficiali incluse nel calcolo (§6.2).
+- **Limiti** opzionali di vento, raffica e onda (profilo, disattivati di default): il routing evita le zone oltre limite.
+- **Margine dalla costa** 0.3 NM (profilo, regolabile).
+- **Motore vicino a terra** (profilo, disattivato di default): sotto *D* NM dalla terra si procede a motore.
+- **Avvisi sulla rotta** (tratti evidenziati + riepilogo):
+  - onda oltre l'altezza di avviso impostata nel profilo;
+  - **attendibilità ridotta** nei tratti a meno di *A* NM dalla costa o tra le isole (default 1 NM): traffico e orografia locale rendono il routage poco affidabile.
 - Se un punto cade a terra: spostamento automatico al punto di mare più vicino, con avviso.
 - Calcolo a isocrone in **Web Worker** (§6), senza bloccare l'interfaccia, con barra di avanzamento e possibilità di annullare.
 - Evitamento della terra con linea di costa OSM ad alta risoluzione (§7).
@@ -88,7 +101,12 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 
 - Una simulazione per ogni ora delle prossime 24 h (24 run), stessa configurazione.
 - Grafico (asse X = ora di partenza) con: durata, ore di motore, vento max, raffica max, onda max.
-- **Partenza migliore** evidenziata (criterio in §6.7, da confermare).
+- Tutte le 24 partenze visibili; quattro **categorie** evidenziate (una partenza può averne più di una), poi sceglie l'utente:
+  - **Speedy** — durata minima;
+  - **Shorty** — distanza minima;
+  - **Windy** — meno ore di motore;
+  - **Lazy** — navigazione più comoda: meno ore di bolina, onda più bassa (vento in poppa/lasco o motore contano come comodi). Formula in §6.7.
+- Le partenze oltre i limiti impostati sono segnate come "fuori limite".
 - Tocco su una colonna del grafico → mostra quella rotta su mappa.
 - Run eseguiti nel worker in sequenza (o in un pool di 2 worker se `navigator.hardwareConcurrency ≥ 4`), con avanzamento "n/24".
 
@@ -102,11 +120,11 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 
 ### 2.9 Account e dati utente
 
-- Login con Supabase Auth (metodo da decidere, vedi Domande aperte).
+- Login con Supabase Auth: **email + password** e **Google** (OAuth).
 - **Login obbligatorio** per tutto ciò che si salva: impostazioni del profilo, barche, polari, rotte (con eventuale finestra di partenza). Senza login si consultano solo mappa e meteo.
 - Row Level Security su tutte le tabelle (§4).
 - Pagina **profilo**: nome, correttivi polari e soglia motore (§2.5), preferenze (modello, layer).
-- **Esportazione del routage** consultabile offline (PDF, JPG o altro formato): prevista, formato e contenuti da definire in un secondo tempo (fuori dalle fasi 1–4).
+- Nessuna condivisione dentro l'app: per condividere e consultare offline si userà l'**esportazione del routage** (PDF, JPG o altro), da definire dopo le fasi 1–4.
 
 ### 2.10 PWA
 
@@ -163,9 +181,9 @@ Da **non** usare salvo necessità emersa in sviluppo: librerie per particelle (e
 | Uso | Endpoint | Modello (parametro `models`) | Note |
 |---|---|---|---|
 | Vento 0–72 h | Forecast API | ICON-2I (ItaliaMeteo-ARPAE, ~2.2 km) | Identificativo esatto da verificare in fase 1. |
-| Vento > 72 h | Forecast API | ECMWF IFS | Risoluzione disponibile da verificare (0.25° o 9 km). |
+| Vento > 72 h | Forecast API | ECMWF IFS | Fino a +5 giorni. Run 00/06/12/18 UTC. Risoluzione da verificare (0.25° o 9 km). |
 | Confronto | Forecast API | GFS | ~0.25°. |
-| Onda | Marine API | modello predefinito (best match) | `wave_height`, `wave_direction`, `wave_period`; opzionali onda da vento/swell. |
+| Onda e correnti | Marine API | modello predefinito (best match) | `wave_*`, `wind_wave_*`, `swell_wave_*` (altezza, direzione, periodo); `ocean_current_velocity`, `ocean_current_direction`. |
 
 Variabili vento: `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m`, con `wind_speed_unit=kn` e `timezone=GMT`.
 
@@ -178,7 +196,7 @@ Variabili vento: `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m`, con `
 - **Modello Auto**: fusione lato client — per ogni ora t si usa ICON-2I se t ≤ ultima ora valida di ICON-2I, altrimenti ECMWF. Possibile discontinuità al passaggio: segnalata sul cursore temporale.
 - **Punti costieri senza onda**: il modello marino può restituire `null` vicino a costa; si usa il valore valido più vicino (max 2 celle), altrimenti "n.d.".
 
-**Cache**: IndexedDB, chiave = (modello, griglia, run). Validità: fino al successivo aggiornamento atteso del modello (orari da configurare), comunque max 3 h. Pulsante "aggiorna" manuale.
+**Cache**: IndexedDB, chiave = (modello, griglia, run). Nuovo download **solo quando è disponibile un run più recente** (orari dei run per modello in `config.js`); pulsante "aggiorna" manuale.
 
 ### 3.5 Sicurezza e chiavi
 
@@ -205,6 +223,12 @@ Schema `public`. Tutte le tabelle hanno RLS attiva; chiavi primarie `uuid` (`gen
 | `split_twa_deg` | numeric(4,1) | confine bolina/portanti, default 90 |
 | `motor_mode` | text | `check in ('speed','vmg')`, default `'vmg'` |
 | `motor_threshold_kn` | numeric(4,1) | soglia X, default 3.0 |
+| `motor_near_land` | boolean | motore sotto una distanza da terra, default `false` |
+| `motor_near_land_nm` | numeric(4,2) | distanza D, default 0.5 |
+| `coast_margin_nm` | numeric(4,2) | margine dalla costa, default 0.3 |
+| `coast_warning_nm` | numeric(4,2) | distanza per avviso "attendibilità ridotta", default 1.0 |
+| `wave_warning_m` | numeric(4,1) | altezza onda di avviso, default 2.0 |
+| `limit_tws_kn`, `limit_gust_kn`, `limit_wave_m` | numeric | limiti di navigabilità, nullable (null = disattivato) |
 | `settings` | jsonb | default `{}` (layer attivi, modello preferito, criteri finestra) |
 | `disclaimer_version` | int | ultima versione dell'avviso accettata |
 | `created_at`, `updated_at` | timestamptz | default `now()` |
@@ -251,6 +275,7 @@ Riga creata da trigger su inserimento in `auth.users`.
 | `boat_id` | uuid | FK → `boats.id`, `on delete set null` |
 | `name` | text | `not null` |
 | `start_lat`, `start_lon`, `end_lat`, `end_lon` | double precision | |
+| `waypoints` | jsonb | array `[{lat, lon}]` intermedi, default `[]` |
 | `departure_at` | timestamptz | ora di partenza scelta |
 | `model` | text | `auto` / `icon2i` / `ecmwf` / `gfs` |
 | `forecast_run_at` | timestamptz | run del modello usato |
@@ -341,7 +366,7 @@ TWA\TWS;6;8;10;12;14;16;20
 
 ### 6.1 Ingressi
 
-Partenza P0, arrivo P1, ora di partenza t0, polare (set scelto) + correttivi + parametri motore, campo meteo (u, v, raffica, onda) sulla griglia di corridoio, linea di costa (indice spaziale), parametri:
+Partenza P0, waypoint W1…Wn, arrivo P1, ora di partenza t0, polare (set scelto) + correttivi + parametri motore, campo meteo (u, v, raffica, onda, corrente) sulla griglia di corridoio, linea di costa (indice spaziale), parametri:
 
 | Parametro | Default | Note |
 |---|---|---|
@@ -349,7 +374,7 @@ Partenza P0, arrivo P1, ora di partenza t0, polare (set scelto) + correttivi + p
 | Passo di prua | 5° | 72 prue per punto, ridotte se fuori settore utile |
 | Cella di potatura | 0.5 NM | |
 | Max punti per isocrona | 1500 | |
-| Durata massima | fine orizzonte meteo o 120 h | |
+| Durata massima | 120 h (orizzonte di 5 giorni) | |
 
 ### 6.2 Espansione
 
@@ -357,8 +382,9 @@ Per ogni punto dell'isocrona corrente (posizione, tempo, prua precedente, stato 
 
 1. Si interpola il vento (u, v) nello spazio (bilineare) e nel tempo (lineare) → TWS, TWD.
 2. Per ogni prua candidata: TWA, velocità dalla polare con correttivi e regola motore.
-3. Nuova posizione = spostamento lungo l'ortodromia per `bsp × Δt` (sottopassi se Δt lungo e il vento varia).
-4. Scarto se il segmento interseca la terra (§7) o esce dalla BBOX.
+3. Corrente: velocità sul fondo = vettore barca (`bsp`, prua) + vettore corrente; nuova posizione = spostamento per `SOG × Δt` lungo `COG` (sottopassi se Δt lungo e il campo varia).
+4. Scarto se il segmento interseca la terra o il margine di costa (§7), esce dalla BBOX, o attraversa zone oltre i limiti di vento/raffica/onda impostati.
+5. Motore forzato se attivo `motor_near_land` e la distanza da terra < `motor_near_land_nm`.
 
 ### 6.3 Potatura
 
@@ -366,7 +392,10 @@ Per ogni punto dell'isocrona corrente (posizione, tempo, prua precedente, stato 
 - Ulteriore limite: se i punti superano il massimo, si tengono quelli con minore stima "tempo trascorso + distanza residua / velocità massima della polare" (euristica tipo A*).
 - Le celle già raggiunte in isocrone precedenti restano bloccate (evita di tornare indietro).
 
-### 6.4 Arrivo
+### 6.4 Arrivo e waypoint
+
+- Con waypoint il calcolo procede **a tratti**: P0→W1, W1→W2, …, Wn→P1; ogni tratto parte all'ora d'arrivo del precedente. La "meta corrente" per la regola motore VMG è il punto di arrivo del tratto.
+
 
 - Quando un segmento passa entro `bsp × Δt` da P1 si calcola il tempo esatto di arrivo diretto a P1 (se il segmento verso P1 non interseca terra).
 - Si completa l'isocrona corrente e si sceglie l'arrivo più rapido; ricostruzione della traccia tramite puntatori al genitore.
@@ -376,17 +405,24 @@ Per ogni punto dell'isocrona corrente (posizione, tempo, prua precedente, stato 
 
 - Penalità virata/strambata: se il lato del vento cambia tra genitore e figlio si aggiunge `tack_penalty_s` (default 0, quindi disattivata).
 - Passaggio vela ↔ motore senza penalità.
-- Onda: in questa versione **solo registrata** per le statistiche (nessuna riduzione di velocità; vedi Domande aperte).
+- Onda: **nessuna riduzione di velocità**; registrata per statistiche e avvisi (soglia `wave_warning_m`).
+- Avviso "attendibilità ridotta": punti a distanza da terra < `coast_warning_nm`.
+- Nessuna penalità per virate/strambate.
 - Distanze: formula dell'haversine / ortodromia su sfera di raggio 3440.065 NM.
 
 ### 6.6 Uscita
 
-Traccia = array di punti `{t, lat, lon, cog, bsp, tws, twd, twa, gust, wave_h, wave_dir, wave_per, motor}`; riepilogo: durata, distanza, ore di motore, massimi di TWS/raffica/onda lungo la traccia (campionati ad ogni passo). Isocrone (polilinee) opzionali per la visualizzazione.
+Traccia = array di punti `{t, lat, lon, heading, bsp, cog, sog, tws, twd, twa, gust, wave_h, wave_dir, wave_per, cur_kn, cur_dir, motor, dist_land_nm, warn}`; riepilogo: durata, distanza, ore di motore, massimi di TWS/raffica/onda lungo la traccia (campionati ad ogni passo). Isocrone (polilinee) opzionali per la visualizzazione.
 
 ### 6.7 Finestra di partenza
 
 - 24 run con t0 = ora intera successiva + k h, k = 0…23; stesso campo meteo caricato una sola volta nel worker.
-- Criterio "migliore" proposto: **durata minima** tra i run che rispettano limiti opzionali (raffica max, onda max, ore di motore max impostabili dall'utente); a parità (±5 %) meno ore di motore. Da confermare.
+- Per ogni run: durata, distanza, ore di motore, ore di bolina (a vela con TWA < `split_twa_deg`), vento/raffica/onda massimi, flag "fuori limite".
+- Categorie, calcolate tra i run non fuori limite:
+  - **Speedy**: `duration_h` minima;
+  - **Shorty**: `distance_nm` minima;
+  - **Windy**: `motor_h` minime (a parità, durata minore);
+  - **Lazy**: punteggio di disagio minimo = ore di bolina / durata + `max_wave_m` / `wave_warning_m` (pesi da tarare; vento in poppa/lasco e motore non pesano).
 
 ### 6.8 Obiettivi di prestazione
 
@@ -405,16 +441,16 @@ OSM land polygons (osmdata.openstreetmap.de, versione "split", WGS84, licenza OD
 
 1. Ritaglio sulla BBOX + margine 0.2°.
 2. Semplificazione con tolleranza ~20–30 m (da tarare: bilanciare dimensione file e canali stretti tra le isole).
-3. Esclusione isole/scogli sotto un'area minima (da decidere; proposta: tenere tutto ciò che è > 0.01 km², gli scogli più piccoli restano un limite noto).
-4. Esportazione in GeoJSON con coordinate arrotondate a 5 decimali (~1 m), eventualmente suddivisa in tasselli 1°×1° caricabili su richiesta.
-5. Procedura documentata in `tools/coastline/README.md` (strumenti: ogr2ogr/mapshaper, eseguiti a mano, non parte dell'app). Dimensione obiettivo: < 3 MB compressi.
+3. **Si tengono tutte le isole e gli scogli** presenti in OSM.
+4. Esportazione in GeoJSON con coordinate arrotondate a 5 decimali (~1 m), **suddivisa in tasselli 1°×1°** caricati su richiesta (mappa visibile, corridoio della rotta).
+5. Procedura documentata in `tools/coastline/README.md` (strumenti: ogr2ogr/mapshaper, eseguiti a mano, non parte dell'app). Dimensione obiettivo: tassello medio < 500 KB compresso.
 
 ### 7.3 Uso nel worker
 
 - Indice spaziale a griglia (celle 0.05°): ogni cella elenca i segmenti di costa che la toccano, più un flag "tutta terra / tutta mare / mista".
 - Test segmento-terra: celle attraversate dal segmento → intersezione con i soli segmenti di costa delle celle miste; celle "tutta terra" → scarto immediato.
 - Test punto-in-terra (spostamento di partenza/arrivo): ray casting sui poligoni delle celle vicine.
-- Margine di sicurezza dalla costa opzionale (buffer, default 0) — vedi Domande aperte.
+- Margine dalla costa (`coast_margin_nm`, default 0.3 NM) e distanza da terra per avvisi/motore: calcolati sulla distanza punto-segmento dalla costa più vicina (celle vicine dell'indice).
 
 ---
 
@@ -426,103 +462,45 @@ OSM land polygons (osmdata.openstreetmap.de, versione "split", WGS84, licenza OD
 - **Onda vicino a costa**: dati mancanti o poco affidabili sotto costa e nei canali tra le isole.
 - **Linea di costa**: semplificata; non considera fondali, secche, scogli piccoli, zone interdette, parchi marini, dighe e porti.
 - **Polari**: le ORC sono teoriche (barca da regata, equipaggio esperto, mare piatto); correttivi e assenza dell'effetto onda rendono le durate stime ottimistiche.
-- **Correnti**: non considerate.
+- **Correnti**: solo superficiali, a bassa risoluzione; nei canali stretti poco affidabili.
 - **GitHub Pages**: nessun backend, nessuna variabile segreta; tutte le chiamate partono dal browser.
 - **iOS**: limiti di storage e di esecuzione in background per le PWA; il calcolo si interrompe se l'app va in background.
 
 ---
 
-## 9. Domande aperte
+## 9. Decisioni (ex domande aperte)
 
-Per ogni domanda c'è la mia **proposta**: se ti va bene basta rispondere "ok", altrimenti scegli un'altra opzione. Numeri fissi (PIANO.md li richiama).
+Tutte le domande sono state chiuse il 2026-11-04. Numeri mantenuti perché richiamati da PIANO.md.
 
-### Hosting e uso
+| # | Tema | Decisione |
+|---|---|---|
+| 1 | Indirizzo | `pompiliipierluigi-byte.github.io/meteo/` |
+| 2 | Utenti | Tu + amici/equipaggio (2–4), non commerciale |
+| 3 | Mappa | CARTO chiara predefinita, OSM alternativa, OpenSeaMap attivabile; menu laterale a scomparsa |
+| 4 | GFS | Selezionabile subito; confronto rotte tra modelli dopo le fasi 1–4 |
+| 5 | Orizzonte | 5 giorni per mappa e routing (Auto: ICON-2I 0–72 h, ECMWF oltre) |
+| 6 | Griglia | Larga (~0.25°) per la mappa, fine solo nel corridoio della rotta; download solo a nuovo run |
+| 7 | Onda | Layer separati: totale, da vento, swell |
+| 8 | Motore | Modalità "Soglia velocità" / "Soglia VMG" (VMG verso arrivo o prossimo waypoint), default VMG |
+| 9 | Vele bianche | Derivate: efficienza crociera 80 % × vele bianche 50 % nelle portanti = 40 %, nel profilo |
+| 10 | Set vele | Scelto dall'utente a ogni calcolo |
+| 11 | Correttivi | Nel profilo; confine bolina/portanti 90° regolabile |
+| 12 | Limiti e virate | Limiti vento/raffica/onda opzionali (il routing li evita); nessuna penalità virate |
+| 13 | Onda e velocità | Nessuna riduzione; avviso se l'onda supera l'altezza impostata |
+| 14 | Costa | Margine 0.3 NM regolabile; avviso "attendibilità ridotta" vicino a costa/isole; opzione motore sotto D NM da terra |
+| 15 | Scogli | Tenuti tutti; costa a tasselli 1°×1° |
+| 16 | Finestra | Tutte le partenze visibili; categorie Speedy, Shorty, Windy, Lazy |
+| 17 | Correnti | Incluse nel routing dalla fase 3, con layer sulla mappa |
+| 18 | Waypoint | Sì, in fase 3, calcolo a tratti |
+| 19 | Login | Email + password e Google |
+| 20 | Senza login | Solo mappa e meteo; login obbligatorio per profilo, barche, polari, rotte |
+| 21 | Supabase | Progetto da creare in fase 2; SQL nel repo con guida passo passo (`supabase/README.md`) |
+| 22 | Condivisione | Nessuna nell'app; si useranno le esportazioni |
+| 23 | Dati ORC | Uso non commerciale tra pochi utenti: ok |
 
-**1. Indirizzo dell'app** — Il repo ora si chiama `meteo`, quindi l'app sarà su `pompiliipierluigi-byte.github.io/meteo/`.
-→ Proposta: confermi questo indirizzo (niente dominio personalizzato).
+### Da verificare in sviluppo (non servono tue risposte)
 
-**2. Chi la usa?** — Solo tu / anche amici / pubblico. Uso commerciale?
-→ Proposta: solo uso personale, non commerciale (Open-Meteo gratuito lo richiede).
-
-### Meteo e mappa
-
-**3. Mappa di sfondo**
-- a) OSM standard · b) CARTO chiara · c) Esri Ocean
-- + segnalamenti nautici OpenSeaMap sì/no
-→ Proposta: b) CARTO + OpenSeaMap attivabile.
-
-**4. GFS "come confronto"**
-- a) basta poterlo scegliere nel menu modelli
-- b) confronto esplicito (due modelli affiancati o rotta calcolata con entrambi)
-→ Proposta: a) per ora.
-
-**5. Quanti giorni di previsione?**
-→ Proposta: mappa fino a 7 giorni, routing fino a 5.
-
-**6. Dettaglio della griglia meteo**
-Griglia larga (~25 km) sulla mappa e griglia fine solo lungo la rotta, per non superare i limiti gratuiti di Open-Meteo.
-→ Proposta: ok così.
-
-**7. Onda**
-- a) solo onda totale · b) anche onda da vento e onda lunga (swell) separate
-→ Proposta: a) sulla mappa, b) solo nel popup al tocco.
-
-### Barca e polari
-
-**8. Quando si accende il motore?** ✅ *Deciso*: due modalità scelte nel profilo, "Soglia velocità" e "Soglia VMG" (§2.5, §5.2).
-VMG calcolata verso l'arrivo o verso il prossimo waypoint; modalità predefinita "Soglia VMG".
-
-**9. Vele bianche per barche importate da ORC** ✅ *Deciso*: efficienza crociera 80 % + vele bianche 50 % nelle portanti (= 40 %), modificabili nel profilo.
-
-**10. Quale set usa il calcolo?**
-- a) lo scegli tu ogni volta (full / vele bianche)
-- b) automatico: vele bianche sopra una certa intensità di vento
-→ Proposta: a).
-
-**11. Correttivo bolina/portanti** ✅ *Deciso*: nel profilo utente, confine a 90° (regolabile).
-
-**12. Limiti di sicurezza nel calcolo**
-Vuoi che il routing *eviti* zone con vento/raffiche/onda oltre un limite (oltre a filtrarle nella finestra di partenza)? E una penalità di tempo per virate e strambate?
-→ Proposta: limiti sì (impostabili, disattivati di default); penalità virata no.
-
-**13. L'onda rallenta la barca?**
-→ Proposta: no in questa versione (le durate saranno un po' ottimistiche).
-
-### Routing
-
-**14. Distanza minima dalla costa**
-→ Proposta: 0.3 NM, regolabile.
-
-**15. Scogli piccoli**
-Ignoro isolotti sotto ~100 × 100 m per tenere leggero il file della costa?
-→ Proposta: sì.
-
-**16. "Partenza migliore" = ?**
-- a) la più veloce · b) meno ore di motore · c) mix con pesi tuoi
-→ Proposta: a), scartando le partenze oltre i limiti di vento/onda impostati.
-
-**17. Correnti marine**
-→ Proposta: escluse ora, magari in futuro.
-
-**18. Waypoint intermedi obbligati** (es. passare per un canale preciso)
-La regola motore li prevede già (VMG verso il prossimo waypoint).
-→ Proposta: sì, nella fase 3 (routing a tratte: ogni tratto parte all'ora d'arrivo del precedente).
-
-### Account e dati
-
-**19. Come si fa il login?**
-- a) link via email · b) email + password · c) Google
-→ Proposta: b) (il link via email gratuito di Supabase è limitato a poche email all'ora).
-
-**20. Senza login si possono usare barche e rotte?** ✅ *Deciso*: no, login obbligatorio per impostazioni, polari e rotte. Esportazione offline del routage (PDF/JPG/…) da definire più avanti.
-
-**21. Supabase**
-Hai già un progetto? Alla fase 2 mi servono URL e chiave pubblica (anon). Le tabelle le creo io con file SQL che incolli nella console, ok?
-→ Proposta: sì.
-
-**22. Rotte condivisibili con un link pubblico?**
-→ Proposta: no per ora.
-
-**23. Dati ORC**
-Per uso personale non ci sono problemi; per un'app pubblica andrebbe verificata la licenza.
-→ Proposta: legata alla risposta 2.
+- Identificativi esatti dei modelli Open-Meteo, orizzonte di ICON-2I, risoluzione ECMWF.
+- Peso in quota delle richieste multi-punto Open-Meteo.
+- Struttura dei file di orc-data.
+- Pesi del punteggio "Lazy" (proposta da validare sui primi casi reali).

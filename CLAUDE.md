@@ -76,6 +76,6 @@ SPEC.md  PIANO.md  CLAUDE.md  README.md
 ## Flusso di lavoro
 
 - **Un commit per passo**: ogni passo numerato di PIANO.md è un commit a sé, piccolo e funzionante, con messaggio descrittivo in italiano (`Fase 1.3: mappa Leaflet con BBOX e attribuzioni`). Non accorpare passi, non lasciare commit che rompono l'app.
-- Prima di iniziare una fase verificare che le relative Domande aperte (SPEC §9) abbiano risposta; se no, chiedere.
+- Le decisioni sono in SPEC §9: rispettarle; per ogni nuovo dubbio di prodotto chiedere prima di implementare.
 - Se un'implementazione richiede di cambiare la SPEC, aggiornare la SPEC nello stesso commit.
 - Una PR per fase verso `main`.
