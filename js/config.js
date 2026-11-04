@@ -20,3 +20,39 @@ export const HORIZON_H = 120;
 
 /** Supabase (fase 2). */
 export const SUPABASE = Object.freeze({ url: '', anonKey: '' });
+
+/** Open-Meteo: endpoint e parametri delle richieste. */
+export const OPEN_METEO = Object.freeze({
+  forecastUrl: 'https://api.open-meteo.com/v1/forecast',
+  marineUrl: 'https://marine-api.open-meteo.com/v1/marine',
+  /** Giorni richiesti (≤ 14 per non aumentare il peso in quota); si tagliano poi a HORIZON_H. */
+  forecastDays: 6,
+  /** Punti per richiesta multi-coordinata (lunghezza URL contenuta). */
+  chunkSize: 100,
+  /** Pausa tra due blocchi consecutivi (ms), per non saturare la quota al minuto. */
+  chunkPauseMs: 250,
+});
+
+/** Passo della griglia panoramica per la mappa (gradi). */
+export const PANORAMIC_STEP_DEG = 0.25;
+
+/**
+ * Modelli di vento. `api` = parametro `models` della Forecast API; `meta` = nome usato in
+ * `/data/<meta>/static/meta.json` per conoscere l'ultimo run disponibile.
+ * `runHoursUtc` e `availDelayH` (ritardo tipico di pubblicazione) servono a stimare quando
+ * cercare un run nuovo: valori indicativi, il dato certo viene da meta.json.
+ * @type {Readonly<Record<'icon2i'|'ecmwf'|'gfs', {label: string, api: string, meta: string, runHoursUtc: number[], availDelayH: number}>>}
+ */
+export const MODELS = Object.freeze({
+  icon2i: { label: 'ICON-2I', api: 'italia_meteo_arpae_icon_2i', meta: 'italia_meteo_arpae_icon_2i', runHoursUtc: [0, 12], availDelayH: 4 },
+  ecmwf: { label: 'ECMWF IFS', api: 'ecmwf_ifs', meta: 'ecmwf_ifs', runHoursUtc: [0, 6, 12, 18], availDelayH: 7 },
+  gfs: { label: 'GFS', api: 'gfs025', meta: 'ncep_gfs025', runHoursUtc: [0, 6, 12, 18], availDelayH: 5 },
+});
+
+/** Modello d'onda (Marine API, "best match"); meta.json del modello principale per il Mediterraneo. */
+export const MARINE = Object.freeze({
+  label: 'Open-Meteo Marine',
+  meta: 'meteofrance_wave',
+  runHoursUtc: [0, 12],
+  availDelayH: 8,
+});
