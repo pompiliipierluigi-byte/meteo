@@ -10,6 +10,7 @@ import { createMap } from './map/map.js';
 import { createSideMenu, radioGroup, checkbox } from './ui/side-menu.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
+import { createTimeSlider } from './ui/time-slider.js';
 import { WeatherService } from './weather/weather-service.js';
 import { MODEL_CHOICES } from './weather/models.js';
 import { timeIndex } from './weather/grid.js';
@@ -50,7 +51,8 @@ function start() {
   title.textContent = it.app.title;
   topbar.append(title);
 
-  initDisclaimer(document.getElementById('bottombar'));
+  const bottombar = document.getElementById('bottombar');
+  initDisclaimer(bottombar);
 
   const mapCtl = createMap(document.getElementById('map'));
   const menu = createSideMenu(topbar);
@@ -78,6 +80,13 @@ function start() {
 
   checkbox(menu.addSection(it.menu.overlays), it.map.openseamap, mapCtl.getSeamarks(),
     (on) => mapCtl.setSeamarks(on));
+
+  const slider = createTimeSlider(bottombar, (tMs) => {
+    state.tMs = tMs;
+    updateStatus();
+    document.dispatchEvent(new CustomEvent('time-changed'));
+  });
+  state.tMs = slider.get();
 
   /** Aggiorna l'indicazione del modello effettivo e del run per l'ora selezionata. */
   function updateStatus() {
@@ -114,6 +123,7 @@ function start() {
       } else {
         notice.hide();
       }
+      slider.setMarker(wind.switchMs, it.model.autoSwitch);
       updateStatus();
       document.dispatchEvent(new CustomEvent('weather-updated'));
     } catch (err) {

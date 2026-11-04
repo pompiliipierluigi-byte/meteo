@@ -38,6 +38,16 @@ export const it = {
     refresh: 'Aggiorna i dati meteo',
     autoSwitch: 'Da qui ECMWF',
   },
+  time: {
+    label: 'Ora della previsione',
+    minusDay: '−1 giorno',
+    minusHour: '−1 ora',
+    plusHour: '+1 ora',
+    plusDay: '+1 giorno',
+    play: 'Avvia animazione',
+    pause: 'Ferma animazione',
+    now: 'ora',
+  },
   notice: {
     loading: 'Scarico {label}: {done}/{total} punti…',
     loadingStart: 'Carico i dati meteo…',

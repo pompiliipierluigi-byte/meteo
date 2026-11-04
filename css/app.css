@@ -249,3 +249,68 @@ button {
 .notice .icon-btn { height: 2rem; min-width: 2rem; font-size: 0.9rem; }
 .notice[data-kind='error'] { background: #fde2e1; color: #7a1410; }
 .notice[data-kind='warn'] { background: var(--c-warn-bg); color: var(--c-warn-fg); }
+
+/* Cursore temporale */
+.time-slider {
+  padding: 0.25rem 0 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 0.25rem;
+}
+.ts-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.ts-label {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ts-btn {
+  flex: 0 0 auto;
+  min-width: 2.4rem;
+  height: 2.2rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.1rem;
+}
+.ts-btn:hover, .ts-btn:focus-visible { background: rgba(255, 255, 255, 0.25); }
+.ts-track {
+  --thumb: 1.25rem;
+  position: relative;
+  padding-top: 0.6rem;
+}
+.ts-track input {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--c-accent);
+}
+.ts-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--pos, 0));
+  width: 0;
+  border-left: 2px dashed var(--c-accent);
+  pointer-events: none;
+}
+.ts-marker span {
+  position: absolute;
+  top: -0.2rem;
+  left: 0.2rem;
+  font-size: 0.6rem;
+  white-space: nowrap;
+  color: var(--c-accent);
+}
+
+@media (max-width: 480px) {
+  .app-title { display: none; }
+  .ts-btn { min-width: 2.1rem; }
+  .ts-label { font-size: 0.82rem; }
+}
