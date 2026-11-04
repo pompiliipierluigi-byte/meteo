@@ -345,3 +345,12 @@ button {
 .legend-ticks span { position: absolute; top: 0.05rem; transform: translateX(-50%); white-space: nowrap; }
 .legend-ticks span:first-child { transform: none; }
 .legend-ticks span:last-child { transform: translateX(-70%); }
+
+/* Sonda */
+.probe-popup .leaflet-popup-content { margin: 0.6rem 0.75rem; font-size: 0.8rem; line-height: 1.35; }
+.probe-pos { font-weight: 600; font-variant-numeric: tabular-nums; }
+.probe-time { color: var(--c-muted); margin-bottom: 0.3rem; }
+.probe table { border-collapse: collapse; }
+.probe th { text-align: left; font-weight: 400; color: var(--c-muted); padding: 0.1rem 0.6rem 0.1rem 0; white-space: nowrap; vertical-align: top; }
+.probe td { padding: 0.1rem 0; }
+.probe-model { margin-top: 0.35rem; font-size: 0.7rem; color: var(--c-muted); }

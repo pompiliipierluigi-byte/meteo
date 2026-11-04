@@ -10,6 +10,8 @@ import { createMap } from './map/map.js';
 import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.js';
 import { createWeatherLayers } from './map/weather-layers.js';
 import { createLegend } from './ui/legend.js';
+import { initProbe } from './ui/probe.js';
+import { L } from './map/map.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
 import { createTimeSlider } from './ui/time-slider.js';
@@ -115,10 +117,13 @@ function start() {
   checkbox(menu.addSection(it.menu.overlays), it.map.openseamap, mapCtl.getSeamarks(),
     (on) => mapCtl.setSeamarks(on));
 
+  const probe = initProbe(mapCtl.map, L, () => state);
+
   const slider = createTimeSlider(bottombar, (tMs) => {
     state.tMs = tMs;
     updateStatus();
     wx.setTime(tMs);
+    probe.refresh();
     document.dispatchEvent(new CustomEvent('time-changed'));
   });
   state.tMs = slider.get();
@@ -162,6 +167,7 @@ function start() {
       slider.setMarker(wind.switchMs, it.model.autoSwitch);
       wx.setWind(wind.field);
       wx.setWaves(waves.field);
+      probe.refresh();
       updateStatus();
       document.dispatchEvent(new CustomEvent('weather-updated'));
     } catch (err) {

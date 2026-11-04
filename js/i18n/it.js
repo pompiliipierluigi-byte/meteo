@@ -52,6 +52,18 @@ export const it = {
     waveArrows: 'Frecce di direzione',
     wavePeriods: 'Etichette del periodo (s)',
   },
+  probe: {
+    wind: 'Vento',
+    gust: 'Raffica',
+    from: 'da',
+    waveTotal: 'Onda totale',
+    waveWind: 'Onda da vento',
+    swell: 'Swell',
+    model: 'Modello',
+    waveModel: 'onda',
+    noData: 'n.d.',
+    noWeather: 'Dati meteo non ancora caricati.',
+  },
   legend: {
     wind: 'Vento (nodi)',
     wave: 'Onda (m)',
