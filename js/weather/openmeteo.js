@@ -195,3 +195,37 @@ export function waveField(grid, indices, data) {
   }
   return f;
 }
+
+/**
+ * URL del file statico con le informazioni sull'ultimo run di un modello.
+ * @param {'forecast'|'marine'} kind
+ * @param {string} metaId
+ * @returns {string}
+ */
+export function metaUrl(kind, metaId) {
+  const host = kind === 'marine' ? 'marine-api.open-meteo.com' : 'api.open-meteo.com';
+  return `https://${host}/data/${metaId}/static/meta.json`;
+}
+
+/**
+ * Inizializzazione dell'ultimo run disponibile (ms UTC), da meta.json.
+ * @param {'forecast'|'marine'} kind
+ * @param {string} metaId
+ * @param {{fetchFn?: typeof fetch, signal?: AbortSignal}} [opts]
+ * @returns {Promise<number>}
+ */
+export async function fetchLastRunMs(kind, metaId, opts = {}) {
+  const fetchFn = opts.fetchFn ?? fetch;
+  let res;
+  try {
+    res = await fetchFn(metaUrl(kind, metaId), { signal: opts.signal, cache: 'no-store' });
+  } catch (err) {
+    if (err?.name === 'AbortError') throw err;
+    throw new OpenMeteoError('Open-Meteo non raggiungibile (rete assente?)');
+  }
+  if (!res.ok) throw new OpenMeteoError(`Open-Meteo meta.json: HTTP ${res.status}`, { status: res.status });
+  const json = await res.json();
+  const s = Number(json.last_run_initialisation_time);
+  if (!Number.isFinite(s) || s <= 0) throw new OpenMeteoError('Open-Meteo meta.json: run non indicato');
+  return s * 1000;
+}
