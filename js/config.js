@@ -1,7 +1,10 @@
 // Configurazione centrale dell'app. Nessun segreto: la chiave anon Supabase è pubblica.
 
-/** Versione dell'app (usata anche per il nome della cache del service worker). */
-export const APP_VERSION = '0.1.0';
+/**
+ * Versione dell'app, mostrata nel footer. Incrementarla a ogni pubblicazione insieme a
+ * `VERSION` in sw.js (che deve iniziare con lo stesso valore: lo verifica tests/sw-shell.test.js).
+ */
+export const APP_VERSION = '1.3';
 
 /**
  * Area di lavoro (gradi).

@@ -57,6 +57,10 @@ function start() {
 
   const bottombar = document.getElementById('bottombar');
   initDisclaimer(bottombar);
+  const version = document.createElement('span');
+  version.className = 'app-version';
+  version.textContent = fill(it.app.version, { v: APP_VERSION });
+  bottombar.querySelector('.disclaimer-bar')?.append(version);
 
   const mapCtl = createMap(document.getElementById('map'));
   const menu = createSideMenu(topbar);

@@ -3,6 +3,7 @@
 export const it = {
   app: {
     title: 'Meteo Adriatico',
+    version: 'Meteo {v}',
   },
   disclaimer: {
     // Incrementare `version` quando cambia il testo: l'avviso verrà richiesto di nuovo.
