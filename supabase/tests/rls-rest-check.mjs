@@ -4,7 +4,7 @@
 //   SB_URL=https://<id>.supabase.co SB_KEY=sb_publishable_… \
 //   A_EMAIL=… A_PASSWORD=… B_EMAIL=… B_PASSWORD=… node supabase/tests/rls-rest-check.mjs
 //
-// Crea una barca di prova con l'utente A, verifica che B non la veda né la modifichi, poi la elimina.
+// Crea una barca e una rotta di prova con l'utente A, verifica che B non le veda né le modifichi, poi le elimina.
 
 const { SB_URL, SB_KEY, A_EMAIL, A_PASSWORD, B_EMAIL, B_PASSWORD } = process.env;
 if (!SB_URL || !SB_KEY || !A_EMAIL || !A_PASSWORD || !B_EMAIL || !B_PASSWORD) {
@@ -68,6 +68,26 @@ try {
   const an = await anon('GET', 'boats');
   ok(an.status >= 400 || (Array.isArray(an.data) && an.data.length === 0), 'senza login nessuna barca visibile');
   ok((await A('GET', `boats?id=eq.${boat.id}`)).data[0]?.name === 'Prova RLS', 'la barca di A è intatta');
+
+  // Rotte (0002_routes.sql).
+  const routeRow = {
+    boat_id: boat.id, name: 'Rotta RLS', start_lat: 43.6, start_lon: 13.5, end_lat: 43.5, end_lon: 16.4,
+    departure_at: new Date().toISOString(), model: 'auto', polar_kind: 'full', params: {}, track: [],
+    duration_h: 1, distance_nm: 1, motor_h: 0,
+  };
+  const r = await A('POST', 'routes', routeRow);
+  ok(r.status === 201, 'A salva una rotta');
+  const route = r.data?.[0];
+  if (route) {
+    ok((await B('GET', `routes?id=eq.${route.id}`)).data.length === 0, 'B non vede la rotta di A');
+    ok((await B('PATCH', `routes?id=eq.${route.id}`, { name: 'rubata' })).data.length === 0, 'B non modifica la rotta di A');
+    ok((await B('DELETE', `routes?id=eq.${route.id}`)).data.length === 0, 'B non elimina la rotta di A');
+    ok((await B('POST', 'routes', { ...routeRow, name: 'x' })).status >= 400, 'B non usa la barca di A in una rotta');
+    const ar = await anon('GET', 'routes');
+    ok(ar.status >= 400 || (Array.isArray(ar.data) && ar.data.length === 0), 'senza login nessuna rotta visibile');
+    ok((await A('GET', `routes?id=eq.${route.id}`)).data[0]?.name === 'Rotta RLS', 'la rotta di A è intatta');
+    await A('DELETE', `routes?id=eq.${route.id}`);
+  }
 } finally {
   await A('DELETE', `boats?id=eq.${boat.id}`);
 }

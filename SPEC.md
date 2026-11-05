@@ -286,8 +286,8 @@ Riga creata da trigger su inserimento in `auth.users`.
 | `track` | jsonb | array di punti (§6.6) |
 | `duration_h`, `distance_nm`, `motor_h` | numeric | riepilogo |
 | `max_tws_kn`, `max_gust_kn`, `max_wave_m` | numeric | riepilogo |
-| `window` | jsonb | nullable — risultati della finestra di partenza (24 riepiloghi, senza tracce) |
-| `created_at` | timestamptz | |
+| `departure_window` | jsonb | nullable — risultati della finestra di partenza (24 riepiloghi, senza tracce); non `window`, parola riservata in SQL |
+| `created_at`, `updated_at` | timestamptz | |
 
 ### 4.5 Policy RLS
 

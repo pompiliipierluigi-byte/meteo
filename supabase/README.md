@@ -27,6 +27,11 @@ Alla fine mi servono due valori pubblici: **Project URL** e **chiave publishable
 
 La migrazione va eseguita **una volta sola**: una seconda esecuzione dà errore perché le tabelle esistono già.
 
+### Rotte salvate (fase 4)
+
+Con lo stesso procedimento, in una nuova query: contenuto di [`migrations/0002_routes.sql`](migrations/0002_routes.sql) → **Run**.
+Controllo nel **Table Editor**: compare `routes` con **RLS enabled**.
+
 ## 3. Autenticazione: indirizzi dell'app
 
 Menu → **Authentication** → **URL Configuration**:
@@ -101,5 +106,5 @@ SB_URL=https://<id-progetto>.supabase.co SB_KEY=sb_publishable_… \
 A_EMAIL=… A_PASSWORD=… B_EMAIL=… B_PASSWORD=… node supabase/tests/rls-rest-check.mjs
 ```
 
-Crea una barca di prova con A, controlla con chiamate REST dirette che B e i visitatori senza login non la vedano
-né la modifichino, poi la elimina.
+Crea una barca e una rotta di prova con A, controlla con chiamate REST dirette che B e i visitatori senza login
+non le vedano né le modifichino, poi le elimina.
