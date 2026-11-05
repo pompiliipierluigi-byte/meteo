@@ -118,3 +118,34 @@ export function formatHm(hours) {
   const min = Math.round(hours * 60);
   return `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
 }
+
+/**
+ * Mezzanotte locale (Europe/Rome) del giorno che contiene `tMs`, in ms UTC (gestisce l'ora legale).
+ * @param {number} tMs
+ * @returns {number}
+ */
+export function startOfLocalDay(tMs) {
+  const p = Object.fromEntries(dtf({
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(tMs).map((x) => [x.type, x.value]));
+  // Scarto locale − UTC in questo istante, poi la mezzanotte con lo scarto valido a mezzanotte.
+  const asUtc = (y, mo, d, h, mi, s) => Date.UTC(y, mo - 1, d, h, mi, s);
+  const offset = asUtc(+p.year, +p.month, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(tMs / 1000) * 1000;
+  let mid = asUtc(+p.year, +p.month, +p.day, 0, 0, 0) - offset;
+  // Se tra mezzanotte e adesso è cambiata l'ora, si ricalcola con lo scarto della mezzanotte.
+  const q = Object.fromEntries(dtf({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(mid).map((x) => [x.type, x.value]));
+  const drift = (+q.hour * 60 + +q.minute) % 1440;
+  if (drift) mid -= (drift > 720 ? drift - 1440 : drift) * 60e3;
+  return mid;
+}
+
+/**
+ * Ora e minuti locali, es. "06:42" (vuoto se null).
+ * @param {number | null} tMs
+ * @returns {string}
+ */
+export function formatTime(tMs) {
+  if (tMs === null || !Number.isFinite(tMs)) return '—';
+  const p = Object.fromEntries(dtf({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(tMs).map((x) => [x.type, x.value]));
+  return `${p.hour}:${p.minute}`;
+}

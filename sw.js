@@ -37,6 +37,7 @@ const SHELL = [
   './js/lib/idb.js',
   './js/lib/format.js',
   './js/lib/text.js',
+  './js/lib/astro.js',
   './js/weather/models.js',
   './js/weather/weather-service.js',
   './js/ui/notice.js',

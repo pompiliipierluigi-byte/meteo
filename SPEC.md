@@ -150,6 +150,14 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Coordinate visualizzate in gradi e minuti decimali (es. `43°30.25'N 016°26.10'E`).
 - Layout mobile-first (uso principale da smartphone/tablet), funzionante anche su desktop.
 
+### 2.12 Sole, luna e maree (fase 5)
+
+- Pagina per una località (porto, località cercata, luogo salvato, centro mappa o GPS) e un giorno (oggi e i successivi 4).
+- Sole: alba e tramonto (orizzonte −0°50′), crepuscolo civile (−6°) e nautico (−12°), mezzogiorno vero e altezza massima.
+- Luna: sorgere e tramonto, fase con percentuale illuminata, date delle prossime fasi principali.
+- Calcolati in locale senza rete (`js/lib/astro.js`, formule a bassa precisione); verificati contro PyEphem: sole entro 0.1 min, luna entro 0.5 min.
+- Maree: §2.13.
+
 ---
 
 ## 3. Architettura
