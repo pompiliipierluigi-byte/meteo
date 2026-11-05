@@ -53,6 +53,7 @@ const SHELL = [
   './js/ui/probe.js',
   './js/data/supabase.js',
   './js/boats/polar.js',
+  './js/boats/polar-csv.js',
   './js/ui/auth.js',
   './vendor/supabase/supabase.js',
   './vendor/leaflet/leaflet-src.esm.js',
