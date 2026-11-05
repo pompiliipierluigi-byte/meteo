@@ -12,6 +12,9 @@ import { createWeatherLayers } from './map/weather-layers.js';
 import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
 import { initAuth } from './ui/auth.js';
+import { getClient } from './data/supabase.js';
+import { createBoatsRepo } from './data/boats-repo.js';
+import { openBoatsPanel } from './ui/boats-panel.js';
 import { L, AVAILABLE_BASEMAPS } from './map/map.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
@@ -100,7 +103,29 @@ function start() {
     loadWeather(false);
   }, () => loadWeather(true));
 
-  initAuth(topbar, menu.addSection(it.auth.section));
+  const auth = initAuth(topbar, menu.addSection(it.auth.section));
+  const boatsRepo = createBoatsRepo(getClient);
+  const boatsSec = menu.addSection(it.boats.section);
+  const boatsHint = document.createElement('p');
+  boatsHint.className = 'muted small';
+  const boatsBtn = document.createElement('button');
+  boatsBtn.type = 'button';
+  boatsBtn.className = 'btn-secondary';
+  boatsBtn.textContent = it.boats.open;
+  boatsBtn.addEventListener('click', () => {
+    menu.close();
+    openBoatsPanel({ repo: boatsRepo });
+  });
+  boatsSec.append(boatsHint, boatsBtn);
+  /** Barche disponibili solo con l'utente collegato (SPEC §2.9). */
+  const syncAccount = () => {
+    const on = Boolean(auth.user());
+    boatsBtn.classList.toggle('hidden', !on);
+    boatsHint.textContent = on ? '' : it.boats.needLogin;
+    boatsHint.classList.toggle('hidden', on);
+  };
+  auth.onChange(syncAccount);
+  syncAccount();
 
   const legend = createLegend(document.getElementById('map'));
   const waveNames = { wave: it.layers.waveTotal, wwave: it.layers.waveWind, swell: it.layers.waveSwell };
