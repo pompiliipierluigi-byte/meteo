@@ -47,18 +47,27 @@ export function createRoutePanel(host, topbar, points, deps) {
   const close = btn('✕', () => api.close(), 'icon-btn');
   close.setAttribute('aria-label', t.close);
   head.append(title, close);
+  // Durante la scelta di un punto il pannello si abbassa e lascia libera la mappa.
+  const pickBar = el('div', 'route-pickbar hidden');
+  const pickText = el('span', '');
+  pickBar.append(pickText, btn(t.cancelPick, () => points.pick(null), 'btn-small'));
   const pointsBox = el('div', 'route-points');
   const body = el('div', 'route-sheet-body');
   const optionsBox = el('div', 'route-options');
   const runBox = el('div', 'route-run');
   const resultBox = el('div', 'route-result');
   body.append(pointsBox, optionsBox, runBox, resultBox);
-  root.append(head, body);
+  root.append(head, pickBar, body);
   host.prepend(root);
 
   function renderPoints() {
     const { start, end, waypoints } = points.get();
     const picking = points.picking();
+    const role = picking === 'start' || picking === 'end' || picking === 'waypoint' ? picking : null;
+    root.classList.toggle('picking-min', Boolean(role));
+    pickBar.classList.toggle('hidden', !role);
+    if (role) pickText.textContent = it.routePoints.tapMap[role];
+    deps.onLayout?.();
     pointsBox.replaceChildren();
     const row = (label, p, cls, ...buttons) => {
       const r = el('div', `rp-row ${cls}`);

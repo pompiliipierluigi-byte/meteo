@@ -253,6 +253,7 @@ export const it = {
     up: 'Sposta prima',
     down: 'Sposta dopo',
     remove: 'Elimina il waypoint',
+    cancelPick: 'Annulla',
     needLogin: 'Accedi (👤) e crea una barca per calcolare la rotta.',
     needBoat: 'Crea una barca (menu ☰ → Barche) per calcolare la rotta.',
     boat: 'Barca',
@@ -316,6 +317,9 @@ export const it = {
     wind: 'Vento (nodi)',
     wave: 'Onda (m)',
     current: 'Corrente (kn)',
+    open: 'Legenda',
+    openLabel: 'Mostra la legenda',
+    closeLabel: 'Nascondi la legenda',
   },
   time: {
     label: 'Ora della previsione',
