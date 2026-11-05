@@ -150,6 +150,30 @@ export function tableBsp(p, twaDeg, twsKn) {
  * @returns {{beatTwa: number, beatBsp: number, runTwa: number, runBsp: number}}
  */
 export function optimalAngles(p, twsKn) {
+  // Memoria per polare e TWS (arrotondato a 0.01 kn): il routing la chiede milioni di volte.
+  let memo = OPT_CACHE.get(p);
+  if (!memo) {
+    memo = new Map();
+    OPT_CACHE.set(p, memo);
+  }
+  const key = Math.round(twsKn * 100);
+  let hit = memo.get(key);
+  if (!hit) {
+    hit = computeOptimalAngles(p, key / 100);
+    if (memo.size > 5000) memo.clear();
+    memo.set(key, hit);
+  }
+  return hit;
+}
+
+/** @type {WeakMap<object, Map<number, {beatTwa: number, beatBsp: number, runTwa: number, runBsp: number}>>} */
+const OPT_CACHE = new WeakMap();
+
+/**
+ * @param {Polar} p
+ * @param {number} twsKn
+ */
+function computeOptimalAngles(p, twsKn) {
   const fromTable = (section, toZero) => (section
     ? { twa: alongTws(p.tws, section.twa, twsKn, false), bsp: alongTws(p.tws, section.bsp, twsKn, toZero) }
     : null);

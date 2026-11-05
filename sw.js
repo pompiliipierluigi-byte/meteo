@@ -60,6 +60,7 @@ const SHELL = [
   './js/routing/land.js',
   './js/routing/geo.js',
   './js/routing/interp.js',
+  './js/routing/isochrone.js',
   './js/weather/corridor.js',
   './js/map/current-layer.js',
   './js/ui/auth.js',
