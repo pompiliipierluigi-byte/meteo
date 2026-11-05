@@ -1,0 +1,806 @@
+{
+ "source": "OpenStreetMap land polygons (\u00a9 OpenStreetMap contributors, ODbL), via land.geojson",
+ "generated": "2026-11-05",
+ "tileDeg": 1,
+ "precisionDeg": 1e-05,
+ "toleranceM": 20.0,
+ "note": "Lati sul bordo del tassello = ritaglio, non costa.",
+ "tiles": [
+  {
+   "id": "39_11",
+   "bounds": [
+    11.8,
+    39.6,
+    12.0,
+    40.0
+   ],
+   "kind": "sea",
+   "polygons": 0,
+   "vertices": 0
+  },
+  {
+   "id": "39_12",
+   "bounds": [
+    12.0,
+    39.6,
+    13.0,
+    40.0
+   ],
+   "kind": "sea",
+   "polygons": 0,
+   "vertices": 0
+  },
+  {
+   "id": "39_13",
+   "bounds": [
+    13.0,
+    39.6,
+    14.0,
+    40.0
+   ],
+   "kind": "sea",
+   "polygons": 0,
+   "vertices": 0
+  },
+  {
+   "id": "39_14",
+   "bounds": [
+    14.0,
+    39.6,
+    15.0,
+    40.0
+   ],
+   "kind": "sea",
+   "polygons": 0,
+   "vertices": 0
+  },
+  {
+   "id": "39_15",
+   "bounds": [
+    15.0,
+    39.6,
+    16.0,
+    40.0
+   ],
+   "kind": "mixed",
+   "polygons": 62,
+   "vertices": 895,
+   "bytes": 18024
+  },
+  {
+   "id": "39_16",
+   "bounds": [
+    16.0,
+    39.6,
+    17.0,
+    40.0
+   ],
+   "kind": "mixed",
+   "polygons": 1,
+   "vertices": 205,
+   "bytes": 4193
+  },
+  {
+   "id": "39_17",
+   "bounds": [
+    17.0,
+    39.6,
+    18.0,
+    40.0
+   ],
+   "kind": "mixed",
+   "polygons": 1,
+   "vertices": 13,
+   "bytes": 401
+  },
+  {
+   "id": "39_18",
+   "bounds": [
+    18.0,
+    39.6,
+    19.0,
+    40.0
+   ],
+   "kind": "mixed",
+   "polygons": 13,
+   "vertices": 783,
+   "bytes": 15666
+  },
+  {
+   "id": "39_19",
+   "bounds": [
+    19.0,
+    39.6,
+    19.9,
+    40.0
+   ],
+   "kind": "mixed",
+   "polygons": 1,
+   "vertices": 9,
+   "bytes": 324
+  },
+  {
+   "id": "40_11",
+   "bounds": [
+    11.8,
+    40.0,
+    12.0,
+    41.0
+   ],
+   "kind": "sea",
+   "polygons": 0,
+   "vertices": 0
+  },
+  {
+   "id": "40_12",
+   "bounds": [
+    12.0,
+    40.0,
+    13.0,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 110,
+   "vertices": 1024,
+   "bytes": 20826
+  },
+  {
+   "id": "40_13",
+   "bounds": [
+    13.0,
+    40.0,
+    14.0,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 86,
+   "vertices": 948,
+   "bytes": 19183
+  },
+  {
+   "id": "40_14",
+   "bounds": [
+    14.0,
+    40.0,
+    15.0,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 112,
+   "vertices": 3419,
+   "bytes": 68138
+  },
+  {
+   "id": "40_15",
+   "bounds": [
+    15.0,
+    40.0,
+    16.0,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 12,
+   "vertices": 813,
+   "bytes": 16196
+  },
+  {
+   "id": "40_16",
+   "bounds": [
+    16.0,
+    40.0,
+    17.0,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 2,
+   "vertices": 190,
+   "bytes": 3885
+  },
+  {
+   "id": "40_17",
+   "bounds": [
+    17.0,
+    40.0,
+    18.0,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 72,
+   "vertices": 3675,
+   "bytes": 73107
+  },
+  {
+   "id": "40_18",
+   "bounds": [
+    18.0,
+    40.0,
+    19.0,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 45,
+   "vertices": 1531,
+   "bytes": 30572
+  },
+  {
+   "id": "40_19",
+   "bounds": [
+    19.0,
+    40.0,
+    19.9,
+    41.0
+   ],
+   "kind": "mixed",
+   "polygons": 25,
+   "vertices": 1620,
+   "bytes": 32287
+  },
+  {
+   "id": "41_11",
+   "bounds": [
+    11.8,
+    41.0,
+    12.0,
+    42.0
+   ],
+   "kind": "mixed",
+   "polygons": 1,
+   "vertices": 8,
+   "bytes": 307
+  },
+  {
+   "id": "41_12",
+   "bounds": [
+    12.0,
+    41.0,
+    13.0,
+    42.0
+   ],
+   "kind": "mixed",
+   "polygons": 4,
+   "vertices": 850,
+   "bytes": 16970
+  },
+  {
+   "id": "41_13",
+   "bounds": [
+    13.0,
+    41.0,
+    14.0,
+    42.0
+   ],
+   "kind": "mixed",
+   "polygons": 3,
+   "vertices": 989,
+   "bytes": 19717
+  },
+  {
+   "id": "41_14",
+   "bounds": [
+    14.0,
+    41.0,
+    15.0,
+    42.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "41_15",
+   "bounds": [
+    15.0,
+    41.0,
+    16.0,
+    42.0
+   ],
+   "kind": "mixed",
+   "polygons": 8,
+   "vertices": 867,
+   "bytes": 17287
+  },
+  {
+   "id": "41_16",
+   "bounds": [
+    16.0,
+    41.0,
+    17.0,
+    42.0
+   ],
+   "kind": "mixed",
+   "polygons": 32,
+   "vertices": 2306,
+   "bytes": 45801
+  },
+  {
+   "id": "41_17",
+   "bounds": [
+    17.0,
+    41.0,
+    18.0,
+    42.0
+   ],
+   "kind": "mixed",
+   "polygons": 9,
+   "vertices": 420,
+   "bytes": 8438
+  },
+  {
+   "id": "41_18",
+   "bounds": [
+    18.0,
+    41.0,
+    19.0,
+    42.0
+   ],
+   "kind": "sea",
+   "polygons": 0,
+   "vertices": 0
+  },
+  {
+   "id": "41_19",
+   "bounds": [
+    19.0,
+    41.0,
+    19.9,
+    42.0
+   ],
+   "kind": "mixed",
+   "polygons": 9,
+   "vertices": 1447,
+   "bytes": 28766
+  },
+  {
+   "id": "42_11",
+   "bounds": [
+    11.8,
+    42.0,
+    12.0,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 11,
+   "vertices": 345,
+   "bytes": 6980
+  },
+  {
+   "id": "42_12",
+   "bounds": [
+    12.0,
+    42.0,
+    13.0,
+    43.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "42_13",
+   "bounds": [
+    13.0,
+    42.0,
+    14.0,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 1,
+   "vertices": 218,
+   "bytes": 4427
+  },
+  {
+   "id": "42_14",
+   "bounds": [
+    14.0,
+    42.0,
+    15.0,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 68,
+   "vertices": 1068,
+   "bytes": 21526
+  },
+  {
+   "id": "42_15",
+   "bounds": [
+    15.0,
+    42.0,
+    16.0,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 46,
+   "vertices": 527,
+   "bytes": 10715
+  },
+  {
+   "id": "42_16",
+   "bounds": [
+    16.0,
+    42.0,
+    17.0,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 92,
+   "vertices": 2628,
+   "bytes": 52483
+  },
+  {
+   "id": "42_17",
+   "bounds": [
+    17.0,
+    42.0,
+    18.0,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 141,
+   "vertices": 4707,
+   "bytes": 93748
+  },
+  {
+   "id": "42_18",
+   "bounds": [
+    18.0,
+    42.0,
+    19.0,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 68,
+   "vertices": 3102,
+   "bytes": 61765
+  },
+  {
+   "id": "42_19",
+   "bounds": [
+    19.0,
+    42.0,
+    19.9,
+    43.0
+   ],
+   "kind": "mixed",
+   "polygons": 2,
+   "vertices": 311,
+   "bytes": 6302
+  },
+  {
+   "id": "43_11",
+   "bounds": [
+    11.8,
+    43.0,
+    12.0,
+    44.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "43_12",
+   "bounds": [
+    12.0,
+    43.0,
+    13.0,
+    44.0
+   ],
+   "kind": "mixed",
+   "polygons": 1,
+   "vertices": 290,
+   "bytes": 5862
+  },
+  {
+   "id": "43_13",
+   "bounds": [
+    13.0,
+    43.0,
+    14.0,
+    44.0
+   ],
+   "kind": "mixed",
+   "polygons": 49,
+   "vertices": 980,
+   "bytes": 19710
+  },
+  {
+   "id": "43_14",
+   "bounds": [
+    14.0,
+    43.0,
+    15.0,
+    44.0
+   ],
+   "kind": "sea",
+   "polygons": 0,
+   "vertices": 0
+  },
+  {
+   "id": "43_15",
+   "bounds": [
+    15.0,
+    43.0,
+    16.0,
+    44.0
+   ],
+   "kind": "mixed",
+   "polygons": 362,
+   "vertices": 9211,
+   "bytes": 183716
+  },
+  {
+   "id": "43_16",
+   "bounds": [
+    16.0,
+    43.0,
+    17.0,
+    44.0
+   ],
+   "kind": "mixed",
+   "polygons": 153,
+   "vertices": 8463,
+   "bytes": 168057
+  },
+  {
+   "id": "43_17",
+   "bounds": [
+    17.0,
+    43.0,
+    18.0,
+    44.0
+   ],
+   "kind": "mixed",
+   "polygons": 24,
+   "vertices": 1441,
+   "bytes": 28682
+  },
+  {
+   "id": "43_18",
+   "bounds": [
+    18.0,
+    43.0,
+    19.0,
+    44.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "43_19",
+   "bounds": [
+    19.0,
+    43.0,
+    19.9,
+    44.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "44_11",
+   "bounds": [
+    11.8,
+    44.0,
+    12.0,
+    45.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "44_12",
+   "bounds": [
+    12.0,
+    44.0,
+    13.0,
+    45.0
+   ],
+   "kind": "mixed",
+   "polygons": 1,
+   "vertices": 617,
+   "bytes": 12330
+  },
+  {
+   "id": "44_13",
+   "bounds": [
+    13.0,
+    44.0,
+    14.0,
+    45.0
+   ],
+   "kind": "mixed",
+   "polygons": 41,
+   "vertices": 1761,
+   "bytes": 35099
+  },
+  {
+   "id": "44_14",
+   "bounds": [
+    14.0,
+    44.0,
+    15.0,
+    45.0
+   ],
+   "kind": "mixed",
+   "polygons": 254,
+   "vertices": 11861,
+   "bytes": 235487
+  },
+  {
+   "id": "44_15",
+   "bounds": [
+    15.0,
+    44.0,
+    16.0,
+    45.0
+   ],
+   "kind": "mixed",
+   "polygons": 91,
+   "vertices": 6248,
+   "bytes": 123973
+  },
+  {
+   "id": "44_16",
+   "bounds": [
+    16.0,
+    44.0,
+    17.0,
+    45.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "44_17",
+   "bounds": [
+    17.0,
+    44.0,
+    18.0,
+    45.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "44_18",
+   "bounds": [
+    18.0,
+    44.0,
+    19.0,
+    45.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "44_19",
+   "bounds": [
+    19.0,
+    44.0,
+    19.9,
+    45.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "45_11",
+   "bounds": [
+    11.8,
+    45.0,
+    12.0,
+    46.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "45_12",
+   "bounds": [
+    12.0,
+    45.0,
+    13.0,
+    46.0
+   ],
+   "kind": "mixed",
+   "polygons": 2,
+   "vertices": 631,
+   "bytes": 12615
+  },
+  {
+   "id": "45_13",
+   "bounds": [
+    13.0,
+    45.0,
+    14.0,
+    46.0
+   ],
+   "kind": "mixed",
+   "polygons": 74,
+   "vertices": 3623,
+   "bytes": 72049
+  },
+  {
+   "id": "45_14",
+   "bounds": [
+    14.0,
+    45.0,
+    15.0,
+    46.0
+   ],
+   "kind": "mixed",
+   "polygons": 23,
+   "vertices": 4138,
+   "bytes": 82011
+  },
+  {
+   "id": "45_15",
+   "bounds": [
+    15.0,
+    45.0,
+    16.0,
+    46.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "45_16",
+   "bounds": [
+    16.0,
+    45.0,
+    17.0,
+    46.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "45_17",
+   "bounds": [
+    17.0,
+    45.0,
+    18.0,
+    46.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "45_18",
+   "bounds": [
+    18.0,
+    45.0,
+    19.0,
+    46.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  },
+  {
+   "id": "45_19",
+   "bounds": [
+    19.0,
+    45.0,
+    19.9,
+    46.0
+   ],
+   "kind": "land",
+   "polygons": 1,
+   "vertices": 5
+  }
+ ]
+}

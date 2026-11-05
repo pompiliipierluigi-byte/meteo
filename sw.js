@@ -2,7 +2,7 @@
 // Percorsi relativi allo scope (sottopercorso /meteo/ su GitHub Pages).
 // I dati meteo non passano da qui: sono in IndexedDB (js/weather/cache.js), consultabili offline.
 
-const VERSION = '1.4';
+const VERSION = '1.5';
 const SHELL_CACHE = `shell-${VERSION}`;
 /** Cache delle tile (conservata tra le versioni), con numero massimo di elementi. */
 // v2: scarta le tile CARTO "API KEY REQUIRED" salvate dalla v1.
@@ -57,12 +57,24 @@ const SHELL = [
   './js/boats/polar.js',
   './js/boats/polar-csv.js',
   './js/boats/orc.js',
+  './js/routing/land.js',
+  './js/routing/geo.js',
+  './js/routing/interp.js',
+  './js/routing/isochrone.js',
+  './js/routing/run.js',
+  './js/routing/worker.js',
+  './js/routing/client.js',
+  './js/weather/corridor.js',
+  './js/map/current-layer.js',
+  './js/map/route-layer.js',
   './js/ui/auth.js',
   './js/ui/panel.js',
   './js/ui/polar-table.js',
   './js/ui/boats-panel.js',
   './js/ui/profile-panel.js',
   './js/ui/polar-chart.js',
+  './js/ui/route-points.js',
+  './js/ui/route-panel.js',
   './vendor/supabase/supabase.js',
   './vendor/leaflet/leaflet-src.esm.js',
   './vendor/leaflet/leaflet.css',

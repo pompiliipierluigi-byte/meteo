@@ -5,8 +5,27 @@ import { BBOX, HORIZON_H, MARINE, MODELS, PANORAMIC_STEP_DEG } from '../config.j
 import { makeGrid, gridPoint, maskedIndices, fillNearest } from './grid.js';
 import { SEA_MASK_GRID_ID, SEA_MASK_BITS } from './sea-mask.js';
 import {
-  fetchPoints, fetchLastRunMs, windField, waveField, WIND_VARS, WAVE_VARS, WAVE_FIELD_VARS,
+  fetchPoints, fetchLastRunMs, windField, waveField, routeMarineField,
+  WIND_VARS, WAVE_VARS, WAVE_FIELD_VARS, CURRENT_VARS, ROUTE_MARINE_VARS,
 } from './openmeteo.js';
+import { corridorGrid } from './corridor.js';
+import { distanceNm } from '../routing/geo.js';
+
+/** Ore sicuramente coperte da ICON-2I a partire da adesso (72 h dal run, meno il ritardo di pubblicazione). */
+const ICON_SAFE_HORIZON_H = 54;
+
+/**
+ * Sorgenti di dati: modelli di vento, onda della mappa, correnti della mappa, marino del corridoio.
+ * @param {string} source
+ */
+function sourceSpec(source) {
+  if (source === 'marine') return { kind: 'marine', vars: WAVE_VARS, build: waveField, fill: WAVE_FIELD_VARS, cfg: MARINE };
+  if (source === 'currents') return { kind: 'marine', vars: CURRENT_VARS, build: routeMarineField, fill: ['cur_u', 'cur_v'], cfg: { ...MARINE, label: 'Correnti' } };
+  if (source === 'route-marine') return { kind: 'marine', vars: ROUTE_MARINE_VARS, build: routeMarineField, fill: null, cfg: MARINE };
+  const m = MODELS[source];
+  if (!m) throw new Error(`Sorgente sconosciuta: ${source}`);
+  return { kind: 'forecast', vars: WIND_VARS, build: windField, fill: null, cfg: m, model: m.api };
+}
 import { getLatestField, putField, touchField, cacheDecision, expectedLatestRunMs } from './cache.js';
 import { sourcesFor, fuseAuto, singleModel } from './models.js';
 
@@ -72,15 +91,15 @@ export class WeatherService extends EventTarget {
    * @param {number[]} indices
    * @param {number} [runMs] run noto (da meta.json)
    */
-  async download(source, indices, runMs) {
-    const isMarine = source === 'marine';
-    const cfg = isMarine ? MARINE : MODELS[source];
-    const points = indices.map((i) => gridPoint(this.grid, i % this.grid.nx, Math.floor(i / this.grid.nx)));
+  async download(source, indices, runMs, grid = this.grid) {
+    const spec = sourceSpec(source);
+    const cfg = spec.cfg;
+    const points = indices.map((i) => gridPoint(grid, i % grid.nx, Math.floor(i / grid.nx)));
     const label = cfg.label;
     let done = 0;
     this.progress(label, 0, points.length);
-    const raw = await fetchPoints(isMarine ? 'marine' : 'forecast', points, isMarine ? WAVE_VARS : WIND_VARS, {
-      model: isMarine ? undefined : MODELS[source].api,
+    const raw = await fetchPoints(spec.kind, points, spec.vars, {
+      model: spec.model,
       onProgress: (d, t) => {
         done = d;
         this.progress(label, d, t);
@@ -88,12 +107,12 @@ export class WeatherService extends EventTarget {
       onWait: (ms) => this.progress(label, done, points.length, ms),
     });
     const trimmed = trimTimes(raw);
-    const field = isMarine ? waveField(this.grid, indices, trimmed) : windField(this.grid, indices, trimmed);
+    const field = spec.build(grid, indices, trimmed);
     const now = Date.now();
     const run = Number.isFinite(runMs) ? runMs : expectedLatestRunMs(now, cfg.runHoursUtc, cfg.availDelayH);
     /** @type {import('./cache.js').CachedField} */
     const cached = {
-      source, grid: this.grid, runMs: run, fetchedMs: now, checkedMs: now,
+      source, grid, runMs: run, fetchedMs: now, checkedMs: now,
       timesMs: field.timesMs, vars: field.vars,
     };
     return { raw: trimmed, field, cached };
@@ -105,10 +124,10 @@ export class WeatherService extends EventTarget {
    * @param {{force?: boolean}} [opts] force: controlla subito la disponibilità di un run nuovo
    * @returns {Promise<Loaded>}
    */
-  load(source, opts = {}) {
-    const key = `${source}|${opts.force ? 'f' : ''}`;
+  load(source, opts = {}, area = null) {
+    const key = `${source}|${area?.grid.id ?? ''}|${opts.force ? 'f' : ''}`;
     if (!this.pending.has(key)) {
-      const p = this.loadNow(source, opts).finally(() => this.pending.delete(key));
+      const p = this.loadNow(source, opts, area).finally(() => this.pending.delete(key));
       this.pending.set(key, p);
     }
     return /** @type {Promise<Loaded>} */ (this.pending.get(key));
@@ -119,19 +138,20 @@ export class WeatherService extends EventTarget {
    * @param {{force?: boolean}} opts
    * @returns {Promise<Loaded>}
    */
-  async loadNow(source, opts) {
-    const isMarine = source === 'marine';
-    const cfg = isMarine ? MARINE : MODELS[source];
-    const cached = await getLatestField(source, this.grid.id);
+  async loadNow(source, opts, area = null) {
+    const spec = sourceSpec(source);
+    const cfg = spec.cfg;
+    const grid = area?.grid ?? this.grid;
+    const cached = await getLatestField(source, grid.id);
     const now = Date.now();
     let decision = cacheDecision(cached, now, cfg);
     if (opts.force && decision === 'fresh' && cached) decision = 'check';
     if (decision === 'fresh' && cached) return { entry: cached, fromCache: true, error: null };
     try {
-      const mask = await this.ensureMask();
+      const mask = area ? null : await this.ensureMask();
       let runMs = NaN;
       try {
-        runMs = await fetchLastRunMs(isMarine ? 'marine' : 'forecast', cfg.meta);
+        runMs = await fetchLastRunMs(spec.kind, cfg.meta);
       } catch (err) {
         if (cached) throw err;
       }
@@ -139,9 +159,9 @@ export class WeatherService extends EventTarget {
         await touchField(cached, now);
         return { entry: cached, fromCache: true, error: null };
       }
-      const indices = maskedIndices(this.grid, mask);
-      const { field, cached: entry } = await this.download(source, indices, runMs);
-      if (isMarine) fillNearest(field, WAVE_FIELD_VARS, mask, 2);
+      const indices = area ? area.indices : maskedIndices(this.grid, /** @type {Uint8Array} */ (mask));
+      const { field, cached: entry } = await this.download(source, indices, runMs, grid);
+      if (spec.fill && mask) fillNearest(field, spec.fill, mask, 2);
       await putField(entry);
       return { entry, fromCache: false, error: null };
     } catch (err) {
@@ -183,6 +203,74 @@ export class WeatherService extends EventTarget {
       runs: Object.fromEntries(Object.entries(loaded).map(([id, l]) => [id, l.entry.runMs])),
       fetchedMs: Math.min(...parts.map((l) => l.entry.fetchedMs)),
       stale: parts.find((l) => l.error)?.error ?? null,
+    };
+  }
+
+  /**
+   * Correnti superficiali sulla griglia della mappa (scaricate solo se il layer è attivo).
+   * @param {{force?: boolean}} [opts]
+   * @returns {Promise<WaveResult>}
+   */
+  async getCurrents(opts = {}) {
+    const l = await this.load('currents', opts);
+    return {
+      field: { grid: l.entry.grid, timesMs: l.entry.timesMs, vars: l.entry.vars },
+      runMs: l.entry.runMs,
+      fetchedMs: l.entry.fetchedMs,
+      stale: l.error,
+    };
+  }
+
+  /**
+   * Meteo fine del corridoio di una rotta: vento del modello scelto (Auto = fusione) e onda + corrente.
+   * @param {import('./models.js').ModelChoice} choice
+   * @param {{lat: number, lon: number}[]} route partenza, waypoint, arrivo
+   * @param {{stepDeg?: number, marginNm?: number, departMs?: number}} [opts]
+   * @returns {Promise<{wind: import('./models.js').WindData & {runs: Record<string, number>}, marine: import('./grid.js').WeatherField | null, grid: import('./grid.js').GridSpec, points: number}>}
+   */
+  async getCorridor(choice, route, opts = {}) {
+    const marginNm = opts.marginNm ?? 12;
+    const area = corridorGrid(route, { stepDeg: opts.stepDeg ?? 0.1, marginNm });
+    // Onda e correnti: il modello marino ha ~8 km di risoluzione, basta una griglia più larga.
+    const marineArea = corridorGrid(route, { stepDeg: 0.2, marginNm });
+    let ids = sourcesFor(choice);
+    // Auto: se la traversata stimata finisce entro l'orizzonte di ICON-2I, ECMWF non serve (quota).
+    if (choice === 'auto') {
+      let dist = 0;
+      for (let i = 0; i + 1 < route.length; i++) dist += distanceNm(route[i].lat, route[i].lon, route[i + 1].lat, route[i + 1].lon);
+      const estEndMs = (opts.departMs ?? Date.now()) + ((1.6 * dist) / 4 + 3) * 3600e3;
+      if (estEndMs <= Date.now() + ICON_SAFE_HORIZON_H * 3600e3) ids = ['icon2i'];
+    }
+    /** @type {Record<string, Loaded>} */
+    const loaded = {};
+    for (const id of ids) {
+      try {
+        loaded[id] = await this.load(id, {}, area);
+      } catch (err) {
+        if (choice === 'auto' && id === 'icon2i' && !err?.quota && !/raggiungibile/.test(err?.message ?? '')) continue;
+        throw err;
+      }
+    }
+    const asField = (/** @type {Loaded} */ l) => ({ grid: l.entry.grid, timesMs: l.entry.timesMs, vars: l.entry.vars });
+    if (choice === 'auto' && !loaded.icon2i && !loaded.ecmwf) {
+      // ICON-2I non disponibile e ECMWF non scaricato: si ripiega su ECMWF.
+      loaded.ecmwf = await this.load('ecmwf', {}, area);
+    }
+    const wind = choice === 'auto'
+      ? (loaded.ecmwf ? fuseAuto(loaded.icon2i ? asField(loaded.icon2i) : null, asField(loaded.ecmwf)) : singleModel('icon2i', asField(loaded.icon2i)))
+      : singleModel(choice, asField(loaded[choice]));
+    let marine = null;
+    try {
+      marine = asField(await this.load('route-marine', {}, marineArea));
+    } catch (err) {
+      // Senza onda e correnti il routing funziona lo stesso (velocità senza deriva, nessun avviso onda).
+      console.warn('Onda/correnti del corridoio non disponibili:', err);
+    }
+    return {
+      wind: { ...wind, runs: Object.fromEntries(Object.entries(loaded).map(([id, l]) => [id, l.entry.runMs])) },
+      marine,
+      grid: area.grid,
+      points: area.indices.length,
     };
   }
 

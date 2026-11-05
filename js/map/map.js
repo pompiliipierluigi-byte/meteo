@@ -58,6 +58,8 @@ export function createMap(el) {
     worldCopyJump: false,
   });
   map.fitBounds(bbox);
+  // La mappa cambia altezza quando si aprono pannelli in basso (rotta): Leaflet va avvisato.
+  if ('ResizeObserver' in window) new ResizeObserver(() => map.invalidateSize({ pan: false })).observe(el);
   L.control.zoom({ position: 'topright' }).addTo(map);
   L.control.attribution({ position: 'bottomright', prefix: it.attribution.openmeteo }).addTo(map);
   L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);

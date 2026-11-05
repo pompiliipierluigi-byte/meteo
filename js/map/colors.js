@@ -80,3 +80,15 @@ export function css(rgb, alpha = 1) {
 
 export const windRamp = colorRamp(WIND_STOPS, 0.25);
 export const waveRamp = colorRamp(WAVE_STOPS, 0.05);
+
+/** Scala correnti: 0–0.25–0.5–1–1.5–2+ kn. @type {ColorStop[]} */
+export const CURRENT_STOPS = [
+  [0, [120, 180, 220]],
+  [0.25, [60, 140, 200]],
+  [0.5, [50, 170, 110]],
+  [1, [230, 190, 40]],
+  [1.5, [235, 120, 40]],
+  [2, [200, 40, 60]],
+];
+
+export const currentRamp = colorRamp(CURRENT_STOPS, 0.02);

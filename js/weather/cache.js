@@ -75,8 +75,11 @@ export async function putField(entry) {
     console.warn('Salvataggio in cache non riuscito:', err);
     return;
   }
+  // Si tiene solo l'ultimo run per sorgente e griglia; dei corridoi di rotta solo l'ultimo per sorgente.
+  const corridor = entry.grid.id.startsWith('cor');
   for (const k of await d.keys(FIELDS)) {
-    if (k.startsWith(prefix) && k !== key) await d.del(FIELDS, k);
+    if (k === key) continue;
+    if (k.startsWith(prefix) || (corridor && k.startsWith(`${entry.source}|cor`))) await d.del(FIELDS, k);
   }
 }
 

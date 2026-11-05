@@ -192,7 +192,7 @@ Variabili vento: `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m`, con `
 **Griglia di campionamento** (Open-Meteo restituisce punti, non campi):
 
 - **Griglia panoramica** per la mappa: passo 0.25° sulla BBOX (25 × 32 = 800 punti), ridotta ai soli punti di mare (+ un anello di punti costieri) → stima ≈ 400–450 punti. La maschera mare è precalcolata dai poligoni di terra Natural Earth 10 m (`tools/seamask/`, file generato `js/weather/sea-mask.js`): un punto è di mare se almeno uno dei 9 sottopunti della sua cella lo è (include i punti costieri) → 396 punti, nessuna richiesta di rete.
-- **Griglia di corridoio** per il routing: passo fine (0.05°–0.1°, da tarare) solo nel corridoio tra partenza e arrivo (ellisse con fuochi in partenza/arrivo e margine). Necessaria per risolvere i canali tra le isole croate e gli effetti locali di ICON-2I.
+- **Griglia di corridoio** per il routing: passo 0.1° per il vento (0.2° per onda e correnti, modello marino ~8 km) solo nel corridoio della rotta: un'ellisse per tratto con fuochi agli estremi e margine 12 NM, massimo 600 punti (oltre si allarga il passo). In Auto si scarica solo ICON-2I se la traversata stimata resta entro il suo orizzonte (54 h da adesso), altrimenti anche ECMWF. Correnti dalla Marine API (`ocean_current_velocity` in km/h → nodi, `ocean_current_direction` = verso).
 - Richieste con più coordinate per chiamata (liste `latitude`/`longitude` separate da virgola), suddivise in blocchi (dimensione da tarare per lunghezza URL e peso in quota); blocchi da 50 punti. **Limitatore** a finestra mobile: al massimo 300 chiamate/min (ogni punto = 1 chiamata; limite gratuito 600/min); su errore 429 "Minutely" si attende un minuto e si riprova. Il primo avvio (vento Auto 2 × 396 punti, poi onda 396) richiede quindi circa 3 minuti, con conto alla rovescia visibile; il vento compare appena scaricato; gli avvii successivi usano la cache.
 - Memorizzazione in `Float32Array` per variabile, indicizzate `[t][y][x]`; componenti vento convertite in `u`,`v` per l'interpolazione (la direzione non si interpola direttamente).
 - **Modello Auto**: fusione lato client — per ogni ora t si usa ICON-2I se t ≤ ultima ora valida di ICON-2I, altrimenti ECMWF. Possibile discontinuità al passaggio: segnalata sul cursore temporale.
@@ -439,7 +439,9 @@ Traccia = array di punti `{t, lat, lon, heading, bsp, cog, sog, tws, twd, twa, g
 
 ### 7.1 Fonte
 
-OSM land polygons (osmdata.openstreetmap.de, versione "split", WGS84, licenza ODbL → attribuzione "© OpenStreetMap contributors" obbligatoria nell'app).
+OSM land polygons (osmdata.openstreetmap.de, versione "split", WGS84, licenza ODbL → attribuzione "© OpenStreetMap contributors" obbligatoria nell'app). Se osmdata non è raggiungibile (succede anche da GitHub Actions), le vie `natural=coastline` OSM dagli estratti Geofabrik dei paesi costieri, con i poligoni ricostruiti dalla regola "terra a sinistra" (`tools/coastline/land-from-coastline.py`). I tasselli in uso (2026-11-05) vengono da questa seconda strada.
+
+Nota: la laguna di Venezia (e le altre lagune chiuse dai lidi) in OSM è acqua interna, non mare: per il routing è terra. Non sono navigabili in traversata, quindi va bene.
 
 ### 7.2 Preparazione (offline, una tantum)
 
@@ -447,7 +449,7 @@ OSM land polygons (osmdata.openstreetmap.de, versione "split", WGS84, licenza OD
 2. Semplificazione con tolleranza ~20–30 m (da tarare: bilanciare dimensione file e canali stretti tra le isole).
 3. **Si tengono tutte le isole e gli scogli** presenti in OSM.
 4. Esportazione in GeoJSON con coordinate arrotondate a 5 decimali (~1 m), **suddivisa in tasselli 1°×1°** caricati su richiesta (mappa visibile, corridoio della rotta).
-5. Procedura documentata in `tools/coastline/README.md` (strumenti: ogr2ogr/mapshaper, eseguiti a mano, non parte dell'app). Dimensione obiettivo: tassello medio < 500 KB compresso.
+5. Procedura documentata in `tools/coastline/README.md`, eseguita dal workflow `.github/workflows/coastline.yml` (GDAL, osmium, shapely; non parte dell'app). Dimensione obiettivo: tassello medio < 500 KB compresso — risultato: 1.8 MB in tutto, tassello più pesante 68 KB compresso, segmento mediano ~100 m.
 
 ### 7.3 Uso nel worker
 

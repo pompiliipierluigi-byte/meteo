@@ -1,6 +1,6 @@
 // Legenda delle scale colori (vento in nodi, onda in metri), in basso a sinistra sulla mappa.
 
-import { WIND_STOPS, WAVE_STOPS, css } from '../map/colors.js';
+import { WIND_STOPS, WAVE_STOPS, CURRENT_STOPS, css } from '../map/colors.js';
 import { it } from '../i18n/it.js';
 
 /**
@@ -34,21 +34,23 @@ function scale(title, stops, label) {
 
 /**
  * @param {HTMLElement} mapEl contenitore della mappa
- * @returns {{update: (show: {wind: boolean, wave: string | null}) => void}}
+ * @returns {{update: (show: {wind: boolean, wave: string | null, current?: boolean}) => void}}
  */
 export function createLegend(mapEl) {
   const root = document.createElement('div');
   root.className = 'legend';
   const wind = scale(it.legend.wind, WIND_STOPS, (v) => String(v));
   const wave = scale(it.legend.wave, WAVE_STOPS, (v) => String(v));
-  root.append(wind, wave);
+  const current = scale(it.legend.current, CURRENT_STOPS, (v) => String(v));
+  root.append(wind, wave, current);
   mapEl.append(root);
   return {
     update(show) {
       wind.classList.toggle('hidden', !show.wind);
       wave.classList.toggle('hidden', !show.wave);
       if (show.wave) wave.querySelector('.legend-title').textContent = `${it.legend.wave} — ${show.wave}`;
-      root.classList.toggle('hidden', !show.wind && !show.wave);
+      current.classList.toggle('hidden', !show.current);
+      root.classList.toggle('hidden', !show.wind && !show.wave && !show.current);
     },
   };
 }

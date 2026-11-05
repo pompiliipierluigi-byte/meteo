@@ -40,6 +40,15 @@ export const WIND_FIELD_VARS = ['u', 'v', 'gust'];
 /** Variabili del campo onda. */
 export const WAVE_FIELD_VARS = Object.values(WAVE_KINDS).flatMap((p) => [`${p}_h`, `${p}_per`, `${p}_dx`, `${p}_dy`]);
 
+/** Variabili marine per il corridoio di routing: onda totale e corrente (5: peso 1 per punto). */
+export const ROUTE_MARINE_VARS = ['wave_height', 'wave_direction', 'wave_period', 'ocean_current_velocity', 'ocean_current_direction'];
+
+/** Variabili correnti per il layer sulla mappa. */
+export const CURRENT_VARS = ['ocean_current_velocity', 'ocean_current_direction'];
+
+/** km/h → nodi (la Marine API dà le correnti in km/h). */
+export const KMH_TO_KN = 1 / 1.852;
+
 /** Errore dell'API, con messaggio leggibile e flag di quota. */
 export class OpenMeteoError extends Error {
   /**
@@ -256,4 +265,39 @@ export async function fetchLastRunMs(kind, metaId, opts = {}) {
   const s = Number(json.last_run_initialisation_time);
   if (!Number.isFinite(s) || s <= 0) throw new OpenMeteoError('Open-Meteo meta.json: run non indicato');
   return s * 1000;
+}
+
+/**
+ * Campo marino per il routing: onda totale (wave_h, wave_per, wave_dx, wave_dy) e corrente
+ * (cur_u, cur_v in nodi, verso cui va: est, nord). Le variabili assenti restano NaN.
+ * @param {import('./grid.js').GridSpec} grid
+ * @param {number[]} indices
+ * @param {{timesMs: number[], series: Record<string, (number|null)[][]>}} data
+ * @returns {import('./grid.js').WeatherField}
+ */
+export function routeMarineField(grid, indices, data) {
+  const f = emptyField(grid, data.timesMs, ['wave_h', 'wave_per', 'wave_dx', 'wave_dy', 'cur_u', 'cur_v']);
+  const plane = grid.nx * grid.ny;
+  const S = data.series;
+  const at = (name, k, t) => num(S[name]?.[k]?.[t]);
+  indices.forEach((idx, k) => {
+    for (let t = 0; t < data.timesMs.length; t++) {
+      const o = t * plane + idx;
+      f.vars.wave_h[o] = at('wave_height', k, t);
+      f.vars.wave_per[o] = at('wave_period', k, t);
+      const d = at('wave_direction', k, t);
+      if (Number.isFinite(d)) {
+        f.vars.wave_dx[o] = Math.sin((d * Math.PI) / 180);
+        f.vars.wave_dy[o] = Math.cos((d * Math.PI) / 180);
+      }
+      const sp = at('ocean_current_velocity', k, t);
+      const cd = at('ocean_current_direction', k, t);
+      if (Number.isFinite(sp) && Number.isFinite(cd)) {
+        const kn = sp * KMH_TO_KN;
+        f.vars.cur_u[o] = kn * Math.sin((cd * Math.PI) / 180);
+        f.vars.cur_v[o] = kn * Math.cos((cd * Math.PI) / 180);
+      }
+    }
+  });
+  return f;
 }

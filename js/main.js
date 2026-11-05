@@ -11,6 +11,10 @@ import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.j
 import { createWeatherLayers } from './map/weather-layers.js';
 import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
+import { createRoutePoints } from './ui/route-points.js';
+import { createRoutePanel } from './ui/route-panel.js';
+import { RoutingClient } from './routing/client.js';
+import { createRouteLayer } from './map/route-layer.js';
 import { initAuth } from './ui/auth.js';
 import { getClient } from './data/supabase.js';
 import { createBoatsRepo } from './data/boats-repo.js';
@@ -47,6 +51,9 @@ function registerServiceWorker() {
  *   waves: import('./weather/weather-service.js').WaveResult | null,
  * }}
  */
+/** @type {ReturnType<typeof createRoutePanel> | null} */
+let routePanelRef = null;
+
 const state = {
   choice: 'auto',
   tMs: Math.floor(Date.now() / 3600e3) * 3600e3,
@@ -136,6 +143,8 @@ function start() {
 
   const activeBoat = () => boats.find((b) => b.id === profile?.default_boat_id) ?? null;
   const renderAccount = () => {
+    // Il pannello rotta (creato dopo) segue account, barche e profilo.
+    setTimeout(() => routePanelRef?.refreshOptions(), 0);
     const on = Boolean(auth.user());
     accountBtns.classList.toggle('hidden', !on);
     activeLine.classList.toggle('hidden', !on);
@@ -261,6 +270,7 @@ function start() {
   const updateLegend = (s) => legend.update({
     wind: s.windField || s.windArrows || (s.windParticles && !s.windField && s.wave === 'none'),
     wave: s.wave === 'none' ? null : waveNames[s.wave],
+    current: s.currents,
   });
   const wx = createWeatherLayers(mapCtl.map, getPref('layers', {}), (s) => {
     setPref('layers', s);
@@ -282,6 +292,27 @@ function start() {
   ], ls.wave, (v) => wx.setWave(/** @type {any} */ (v)));
   checkbox(waveSec, it.layers.waveArrows, ls.waveArrows, (on) => wx.setToggle('waveArrows', on));
   checkbox(waveSec, it.layers.wavePeriods, ls.wavePeriods, (on) => wx.setToggle('wavePeriods', on));
+
+  // Correnti: scaricate solo quando il layer è attivo (quota Open-Meteo).
+  const curSec = menu.addSection(it.layers.currentsSection);
+  let currentsLoaded = false;
+  const loadCurrents = async () => {
+    if (currentsLoaded) return;
+    try {
+      const c = await weather.getCurrents();
+      currentsLoaded = true;
+      wx.setCurrents(c.field);
+    } catch (err) {
+      recordError(err);
+      notice.show(fill(it.notice.error, { msg: err?.message ?? String(err) }), 'error');
+    }
+  };
+  checkbox(curSec, it.layers.currents, ls.currents, (on) => {
+    wx.setToggle('currents', on);
+    if (on) loadCurrents();
+  });
+  curSec.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: it.layers.currentsHint }));
+  if (ls.currents) setTimeout(loadCurrents, 0);
 
   rangeRow(menu.addSection(it.layers.opacity), it.layers.opacity, {
     min: 0.1, max: 1, step: 0.05, value: ls.opacity, format: (v) => `${Math.round(v * 100)} %`,
@@ -309,17 +340,49 @@ function start() {
     showLastError(e);
   };
 
-  const probe = initProbe(mapCtl.map, L, () => state);
+  // --- Rotta (fase 3) ---
+  const routing = new RoutingClient();
+  const routePoints = createRoutePoints(mapCtl.map, L, {
+    snap: (pts) => routing.snap(pts, 0.15),
+    notify: (text, kind = 'info') => (text ? notice.show(text, kind) : notice.hide()),
+  });
+  const routeLayer = createRouteLayer(mapCtl.map, L);
+  const routePanel = routePanelRef = createRoutePanel(bottombar, topbar, routePoints, {
+    context: () => ({
+      user: auth.user(),
+      profile,
+      boats,
+      activeBoatId: profile?.default_boat_id ?? null,
+      choice: state.choice,
+      tMs: state.tMs,
+    }),
+    getCorridor: (choice, route, departMs) => weather.getCorridor(choice, route, { departMs }),
+    routing,
+    layer: routeLayer,
+    saveCorrections: async (fields) => {
+      if (!profile) throw new Error(it.profile.unavailable);
+      await profileRepo.update(profile.id, fields);
+      Object.assign(profile, fields);
+    },
+    weatherEvents: weather,
+    onLayout: () => mapCtl.map.invalidateSize({ pan: false }),
+  });
+
+  const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null);
 
   const slider = createTimeSlider(bottombar, (tMs) => {
     state.tMs = tMs;
     updateStatus();
     wx.setTime(tMs);
     probe.refresh();
+    routeLayer.setTime(tMs);
+    routePanel.refresh();
     document.dispatchEvent(new CustomEvent('time-changed'));
   });
   state.tMs = slider.get();
   wx.setTime(state.tMs);
+  // Il pannello rotta sta sopra il cursore temporale.
+  bottombar.prepend(routePanel.root);
 
   /** Aggiorna l'indicazione del modello effettivo e del run per l'ora selezionata. */
   function updateStatus() {
