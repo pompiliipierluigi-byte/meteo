@@ -58,6 +58,7 @@ const SHELL = [
   './js/boats/polar-csv.js',
   './js/boats/orc.js',
   './js/routing/land.js',
+  './js/routing/geo.js',
   './js/ui/auth.js',
   './js/ui/panel.js',
   './js/ui/polar-table.js',
