@@ -2,7 +2,7 @@
 // Percorsi relativi allo scope (sottopercorso /meteo/ su GitHub Pages).
 // I dati meteo non passano da qui: sono in IndexedDB (js/weather/cache.js), consultabili offline.
 
-const VERSION = '1.8';
+const VERSION = '1.9';
 const SHELL_CACHE = `shell-${VERSION}`;
 /** Cache delle tile (conservata tra le versioni), con numero massimo di elementi. */
 // v2: scarta le tile CARTO "API KEY REQUIRED" salvate dalla v1.
@@ -56,6 +56,7 @@ const SHELL = [
   './js/data/boats-repo.js',
   './js/data/profile-repo.js',
   './js/data/routes-repo.js',
+  './js/data/places-repo.js',
   './js/boats/polar.js',
   './js/boats/polar-csv.js',
   './js/boats/orc.js',
@@ -84,6 +85,7 @@ const SHELL = [
   './js/ui/routes-panel.js',
   './js/ui/almanac-panel.js',
   './js/ui/place-picker.js',
+  './js/ui/places-panel.js',
   './js/places/search.js',
   './data/places/ports.json',
   './js/weather/tides.js',

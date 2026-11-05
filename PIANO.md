@@ -143,6 +143,8 @@ In sviluppo (PC, 4 core, pool da 2 worker, dati simulati): finestra di ~200 NM i
 5. Località: elenco porti `data/places/ports.json`, ricerca (porti + geocoding), partenza/arrivo/waypoint da località: `js/places/search.js`, `js/ui/place-picker.js`.
 6. Luoghi salvati e porto base: `supabase/migrations/0003_places.sql`, `js/data/places-repo.js`, uso nel pannello rotta e nella pagina sole/luna/maree.
 
+**Stato (2026-11-05)**: passi 1–6 fatti (versione 1.9). Da fare a mano: eseguire `supabase/migrations/0003_places.sql` (dopo la 0002) nel SQL Editor e `rls-rest-check.mjs`; verificare sul telefono marea e ricerca online (non raggiungibili dall'ambiente di sviluppo: provate con dati simulati).
+
 **Fatto quando**
 - La barra si chiude e ricompare al riavvio; l'avviso resta nel menu.
 - Temperatura del mare sulla mappa con legenda; sonda con il valore.

@@ -88,6 +88,19 @@ try {
     ok((await A('GET', `routes?id=eq.${route.id}`)).data[0]?.name === 'Rotta RLS', 'la rotta di A è intatta');
     await A('DELETE', `routes?id=eq.${route.id}`);
   }
+
+  // Luoghi salvati (0003_places.sql).
+  const pl = await A('POST', 'places', { name: 'Luogo RLS', lat: 42.75, lon: 13.97 });
+  ok(pl.status === 201, 'A salva un luogo');
+  const place = pl.data?.[0];
+  if (place) {
+    ok((await B('GET', `places?id=eq.${place.id}`)).data.length === 0, 'B non vede il luogo di A');
+    ok((await B('PATCH', `places?id=eq.${place.id}`, { name: 'rubato' })).data.length === 0, 'B non modifica il luogo di A');
+    ok((await B('DELETE', `places?id=eq.${place.id}`)).data.length === 0, 'B non elimina il luogo di A');
+    const ap = await anon('GET', 'places');
+    ok(ap.status >= 400 || (Array.isArray(ap.data) && ap.data.length === 0), 'senza login nessun luogo visibile');
+    await A('DELETE', `places?id=eq.${place.id}`);
+  }
 } finally {
   await A('DELETE', `boats?id=eq.${boat.id}`);
 }

@@ -83,12 +83,30 @@ insert into public.routes (name, start_lat, start_lon, end_lat, end_lon, departu
 values ('Rotta B', 43, 13, 44, 14, now(), 'gfs', 'white', '{}', '[]', 1, 1, 0);
 select pg_temp.check((select count(*) = 1 from public.routes), 'B vede solo la propria rotta');
 
+-- --- places (0003) ---
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+insert into public.places (id, name, lat, lon, is_home) values ('30000000-0000-0000-0000-00000000000a', 'Giulianova', 42.755, 13.97, true);
+insert into public.places (name, lat, lon) values ('Tremiti', 42.12, 15.5);
+select pg_temp.check((select count(*) = 2 from public.places), 'A vede i propri luoghi');
+select pg_temp.must_fail($$insert into public.places (name, lat, lon, is_home) values ('Secondo porto base', 43, 14, true)$$, 'un solo porto base per utente');
+select pg_temp.must_fail($$insert into public.places (name, lat, lon) values ('  ', 43, 14)$$, 'nome del luogo obbligatorio');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
+select pg_temp.check((select count(*) = 0 from public.places), 'B non vede i luoghi di A');
+with u as (update public.places set name = 'rubato' where id = '30000000-0000-0000-0000-00000000000a' returning 1)
+select pg_temp.check((select count(*) = 0 from u), 'B non modifica i luoghi di A');
+with d as (delete from public.places where id = '30000000-0000-0000-0000-00000000000a' returning 1)
+select pg_temp.check((select count(*) = 0 from d), 'B non elimina i luoghi di A');
+select pg_temp.must_fail($$insert into public.places (user_id, name, lat, lon) values ('00000000-0000-0000-0000-00000000000a', 'x', 43, 14)$$, 'B non crea luoghi a nome di A');
+insert into public.places (name, lat, lon, is_home) values ('Porto base di B', 41.1, 16.9, true);
+select pg_temp.check((select count(*) = 1 from public.places where is_home), 'B ha il proprio porto base');
+
 -- --- anon ---
 reset request.jwt.claim.sub;
 set role anon;
 select pg_temp.must_fail('select * from public.boats', 'anon non legge boats');
 select pg_temp.must_fail('select * from public.profiles', 'anon non legge profiles');
 select pg_temp.must_fail('select * from public.routes', 'anon non legge routes');
+select pg_temp.must_fail('select * from public.places', 'anon non legge places');
 
 -- --- Cascata ---
 reset role;
@@ -99,5 +117,6 @@ select pg_temp.check((select boat_id is null from public.routes where id = '2000
 delete from auth.users where id = '00000000-0000-0000-0000-00000000000b';
 select pg_temp.check((select count(*) = 0 from public.boats where name = 'Barca B'), 'dati eliminati con l''utente');
 select pg_temp.check((select count(*) = 0 from public.routes where name = 'Rotta B'), 'rotte eliminate con l''utente');
+select pg_temp.check((select count(*) = 0 from public.places where name = 'Porto base di B'), 'luoghi eliminati con l''utente');
 
 \echo 'RLS: tutti i controlli superati'

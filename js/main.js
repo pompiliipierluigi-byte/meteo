@@ -16,6 +16,9 @@ import { createRoutePanel } from './ui/route-panel.js';
 import { createRoutesRepo } from './data/routes-repo.js';
 import { openRoutesPanel } from './ui/routes-panel.js';
 import { openAlmanacPanel } from './ui/almanac-panel.js';
+import { createPlacesRepo, toSearchPlace } from './data/places-repo.js';
+import { openPlacesPanel } from './ui/places-panel.js';
+import { promptBox } from './ui/panel.js';
 import { RoutingClient } from './routing/client.js';
 import { createRouteLayer } from './map/route-layer.js';
 import { initAuth } from './ui/auth.js';
@@ -128,6 +131,32 @@ function start() {
   let profile = null;
   /** @type {import('./data/boats-repo.js').Boat[]} */
   let boats = [];
+  const placesRepo = createPlacesRepo(getClient);
+  /** @type {import('./data/places-repo.js').SavedPlace[]} */
+  let places = [];
+  const savedPlaces = () => places.map(toSearchPlace);
+  const homePlace = () => savedPlaces().find((p) => p.home) ?? null;
+  const reloadPlaces = async () => {
+    try {
+      places = auth.user() ? await placesRepo.list() : [];
+    } catch (err) {
+      // Tabella non ancora creata (migrazione 0003) o Supabase in pausa: il resto funziona.
+      console.warn('Luoghi salvati non disponibili:', err);
+      places = [];
+    }
+  };
+  /** @param {{lat: number, lon: number}} p @param {string} name */
+  const savePlace = async (p, name) => {
+    const n = await promptBox(it.savedPlaces.saveAsk, name, it.savedPlaces.save);
+    if (!n) return;
+    try {
+      await placesRepo.create({ name: n, lat: p.lat, lon: p.lon });
+      await reloadPlaces();
+      notice.show(fill(it.savedPlaces.saved, { name: n }));
+    } catch (err) {
+      notice.show(err?.errors ? err.errors.join(' · ') : errorMessage(err), 'error');
+    }
+  };
   const accountSec = menu.addSection(it.boats.section);
   const accountHint = document.createElement('p');
   accountHint.className = 'muted small';
@@ -143,7 +172,11 @@ function start() {
   profileBtn.type = 'button';
   profileBtn.className = 'btn-secondary';
   profileBtn.textContent = it.profile.open;
-  accountBtns.append(boatsBtn, profileBtn);
+  const placesBtn = document.createElement('button');
+  placesBtn.type = 'button';
+  placesBtn.className = 'btn-secondary';
+  placesBtn.textContent = it.savedPlaces.open;
+  accountBtns.append(boatsBtn, profileBtn, placesBtn);
   accountSec.append(accountHint, activeLine, accountBtns);
 
   const activeBoat = () => boats.find((b) => b.id === profile?.default_boat_id) ?? null;
@@ -164,9 +197,11 @@ function start() {
     if (!auth.user()) {
       profile = null;
       boats = [];
+      places = [];
       renderAccount();
       return;
     }
+    reloadPlaces();
     try {
       [profile, boats] = await Promise.all([profileRepo.get(), boatsRepo.list()]);
       // Preferenze salvate nel profilo: modello applicato all'accesso.
@@ -412,6 +447,19 @@ function start() {
     routesRepo,
     openSaved: (onOpen) => openRoutesPanel({ repo: routesRepo, onOpen }),
     setTime: (tMs) => slider.set(tMs),
+    savedPlaces,
+    homePlace,
+    savePlace: (p, name) => { savePlace(p, name); },
+    placeExtra: (p) => {
+      if (!auth.user() || p.kind === 'saved') return null;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn-small';
+      b.textContent = '★';
+      b.title = b.ariaLabel = it.savedPlaces.saveTitle;
+      b.addEventListener('click', () => savePlace(p, p.name));
+      return b;
+    },
   });
 
   const mapCenter = () => {
@@ -419,7 +467,11 @@ function start() {
     return { lat: c.lat, lon: c.lng };
   };
   /** @param {{lat: number, lon: number, name?: string}} place */
-  const openAlmanac = (place) => openAlmanacPanel({ place, mapCenter });
+  const openAlmanac = (place) => openAlmanacPanel({ place, mapCenter, savedPlaces });
+  placesBtn.addEventListener('click', () => {
+    menu.close();
+    openPlacesPanel({ repo: placesRepo, onChanged: () => { reloadPlaces(); }, onUse: (p) => openAlmanac(p) });
+  });
   const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null,
     (lat, lon) => openAlmanac({ lat, lon }));
   const almBtn = document.createElement('button');
@@ -428,7 +480,7 @@ function start() {
   almBtn.textContent = it.almanac.open;
   almBtn.addEventListener('click', () => {
     menu.close();
-    openAlmanac({ ...mapCenter(), name: it.almanac.mapCenterName });
+    openAlmanac(homePlace() ?? { ...mapCenter(), name: it.almanac.mapCenterName });
   });
   menu.addSection(it.almanac.title).append(almBtn);
 

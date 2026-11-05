@@ -6,6 +6,8 @@ import { el, btn } from './panel.js';
 import { searchKnown, searchOnline, loadPorts } from '../places/search.js';
 
 const ICON = { port: '⚓', saved: '★', online: '📍' };
+/** @param {import('../places/search.js').Place} p */
+const iconOf = (p) => (p.home ? '🏠' : ICON[p.kind]);
 
 /**
  * @param {{actions: {label: string, title?: string, onPick: (p: import('../places/search.js').Place) => void}[],
@@ -40,7 +42,7 @@ export function createPlacePicker(o) {
     for (const p of items) {
       const li = el('li', `place-item place-${p.kind}`);
       const txt = el('div', 'place-text');
-      txt.append(el('strong', '', `${ICON[p.kind]} ${p.name}${p.home ? ` (${t.home})` : ''}`));
+      txt.append(el('strong', '', `${iconOf(p)} ${p.name}${p.home ? ` (${t.home})` : ''}`));
       if (p.detail) txt.append(el('small', 'muted', p.detail));
       const b = el('div', 'rp-buttons');
       for (const a of o.actions) {

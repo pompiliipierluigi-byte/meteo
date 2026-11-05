@@ -32,6 +32,10 @@ La migrazione va eseguita **una volta sola**: una seconda esecuzione dà errore 
 Con lo stesso procedimento, in una nuova query: contenuto di [`migrations/0002_routes.sql`](migrations/0002_routes.sql) → **Run**.
 Controllo nel **Table Editor**: compare `routes` con **RLS enabled**.
 
+### Luoghi salvati (fase 5)
+
+Nuova query con [`migrations/0003_places.sql`](migrations/0003_places.sql) → **Run**. Controllo: compare `places` con **RLS enabled**.
+
 ## 3. Autenticazione: indirizzi dell'app
 
 Menu → **Authentication** → **URL Configuration**:

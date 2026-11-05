@@ -30,6 +30,8 @@ import { windowChart, CHART_COLORS } from './window-chart.js';
  * @property {(tMs: number) => void} [setTime] porta il cursore temporale a un istante
  * @property {() => import('../places/search.js').Place[]} [savedPlaces] luoghi salvati (per la ricerca)
  * @property {(p: import('../places/search.js').Place) => HTMLElement | null} [placeExtra] azioni in più su un risultato (salva)
+ * @property {(p: {lat: number, lon: number}, name: string) => void} [savePlace] salva un punto della rotta tra i luoghi
+ * @property {() => import('../places/search.js').Place | null} [homePlace] porto base, proposto come partenza
  */
 
 /**
@@ -115,7 +117,13 @@ export function createRoutePanel(host, topbar, points, deps) {
       const b = btn(picking === role ? t.tapNow : t.tap, () => points.pick(picking === role ? null : role), picking === role ? 'btn-small active' : 'btn-small');
       return b;
     };
-    row(t.start, start, 'rp-row-start', pickBtn('start'), btn(t.gps, () => points.useGps(), 'btn-small'));
+    const star = (p, label) => {
+      if (!p || !deps.savePlace || !deps.context().user) return [];
+      const b = btn('★', () => deps.savePlace?.(p, label), 'btn-small');
+      b.title = b.ariaLabel = it.savedPlaces.saveTitle;
+      return [b];
+    };
+    row(t.start, start, 'rp-row-start', pickBtn('start'), btn(t.gps, () => points.useGps(), 'btn-small'), ...star(start, t.start));
     waypoints.forEach((w, i) => {
       const up = btn('↑', () => points.moveWaypoint(i, -1), 'btn-small');
       up.setAttribute('aria-label', t.up);
@@ -127,7 +135,7 @@ export function createRoutePanel(host, topbar, points, deps) {
       del.setAttribute('aria-label', t.remove);
       row(`${t.waypoint} ${i + 1}`, w, 'rp-row-way', up, down, del);
     });
-    row(t.end, end, 'rp-row-end', pickBtn('end'));
+    row(t.end, end, 'rp-row-end', pickBtn('end'), ...star(end, t.end));
     const tools = el('div', 'btn-row');
     tools.append(
       btn(picking === 'waypoint' ? t.tapNow : t.addWaypoint, () => points.pick(picking === 'waypoint' ? null : 'waypoint'), picking === 'waypoint' ? 'btn-small active' : 'btn-small'),
@@ -225,6 +233,7 @@ export function createRoutePanel(host, topbar, points, deps) {
   let winJob = null;
   /** @type {Current | null} */
   let current = null;
+  let homeUsed = false;
   const msg = el('p', 'panel-msg');
 
   /** @param {string} text @param {'ok' | 'error'} kind */
@@ -675,6 +684,12 @@ export function createRoutePanel(host, topbar, points, deps) {
     root,
     body,
     open() {
+      // Porto base come partenza, una volta per sessione e solo se la partenza è vuota.
+      const home = deps.homePlace?.();
+      if (home && !homeUsed && !points.get().start) {
+        homeUsed = true;
+        points.place('start', home).then((ok) => ok && showMsg(fill(it.savedPlaces.homeStart, { name: home.name }), 'ok'));
+      }
       renderOptions();
       renderRun();
       root.classList.remove('hidden');

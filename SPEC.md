@@ -323,9 +323,23 @@ Riga creata da trigger su inserimento in `auth.users`.
 | `departure_window` | jsonb | nullable — risultati della finestra di partenza (24 riepiloghi, senza tracce); non `window`, parola riservata in SQL |
 | `created_at`, `updated_at` | timestamptz | |
 
+### 4.6 `places` (fase 5)
+
+| Campo | Tipo | Vincoli / note |
+|---|---|---|
+| `id` | uuid | PK |
+| `user_id` | uuid | FK, `not null`, default `auth.uid()` |
+| `name` | text | `not null`, 1–100 caratteri |
+| `lat`, `lon` | double precision | `not null` |
+| `note` | text | nullable, max 500 |
+| `is_home` | boolean | porto base, default `false`; al massimo uno per utente (indice unico parziale) |
+| `created_at`, `updated_at` | timestamptz | |
+
+Uso: ★ accanto a un porto, a una località cercata o alla partenza/arrivo della rotta; menu → "Luoghi salvati" per porto base, rinomina ed eliminazione. Il porto base è proposto come partenza (una volta per sessione, se la partenza è vuota) e come località di sole, luna e maree. RLS come §4.5.
+
 ### 4.5 Policy RLS
 
-Per `boats`, `polars`, `routes`:
+Per `boats`, `polars`, `routes`, `places`:
 
 - `select`, `update`, `delete`: `using (user_id = auth.uid())`
 - `insert`, `update`: `with check (user_id = auth.uid())`
