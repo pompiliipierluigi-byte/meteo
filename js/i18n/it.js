@@ -43,7 +43,9 @@ export const it = {
   layers: {
     wind: 'Vento',
     windField: 'Campo colorato (intensità)',
-    windArrows: 'Frecce',
+    windArrows: 'Simboli di direzione',
+    windSymbolArrows: 'Frecce (verso in cui soffia)',
+    windSymbolBarbs: 'Barbe meteorologiche (provenienza)',
     opacity: 'Opacità campi colorati',
     wave: 'Onda',
     waveNone: 'Nessuna',

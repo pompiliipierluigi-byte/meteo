@@ -283,6 +283,10 @@ function start() {
   for (const id of /** @type {const} */ (['windField', 'windArrows'])) {
     checkbox(windSec, it.layers[id], ls[id], (on) => wx.setToggle(id, on));
   }
+  radioGroup(windSec, 'windSymbol', [
+    { value: 'arrows', label: it.layers.windSymbolArrows },
+    { value: 'barbs', label: it.layers.windSymbolBarbs },
+  ], ls.windSymbol, (v) => wx.setWindSymbol(/** @type {any} */ (v)));
   const waveSec = menu.addSection(it.layers.wave);
   radioGroup(waveSec, 'wave', [
     { value: 'none', label: it.layers.waveNone },

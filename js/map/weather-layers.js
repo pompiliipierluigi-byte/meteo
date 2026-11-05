@@ -13,7 +13,8 @@ import { currentLayer } from './current-layer.js';
  * Impostazioni dei layer (salvate tra le sessioni).
  * @typedef {Object} LayerSettings
  * @property {boolean} windField
- * @property {boolean} windArrows
+ * @property {boolean} windArrows simboli di direzione del vento attivi
+ * @property {'arrows' | 'barbs'} windSymbol frecce o barbe meteorologiche
  * @property {WaveChoice} wave
  * @property {boolean} waveArrows
  * @property {boolean} wavePeriods
@@ -28,6 +29,7 @@ const LAYER_SETTINGS_VERSION = 2;
 export const DEFAULT_LAYER_SETTINGS = {
   windField: true,
   windArrows: true,
+  windSymbol: 'arrows',
   wave: 'none',
   waveArrows: true,
   wavePeriods: false,
@@ -52,13 +54,14 @@ export function createWeatherLayers(map, saved, onChange) {
   for (const k of Object.keys(st)) if (st[k] === undefined) st[k] = DEFAULT_LAYER_SETTINGS[k];
   delete st.windParticles;
   if (!['none', 'wave', 'wwave', 'swell'].includes(st.wave)) st.wave = 'none';
+  if (!['arrows', 'barbs'].includes(st.windSymbol)) st.windSymbol = 'arrows';
 
   const kind = st.wave === 'none' ? 'wave' : st.wave;
   const layers = {
     waveField: waveFieldLayer({ pane: fieldPane, opacity: st.opacity, kind }),
     windField: windFieldLayer({ pane: fieldPane, opacity: st.opacity }),
     waveArrows: waveArrowsLayer({ pane: arrowsPane, kind }),
-    windArrows: windArrowsLayer({ pane: arrowsPane }),
+    windArrows: windArrowsLayer({ pane: arrowsPane, symbol: st.windSymbol }),
     currents: currentLayer({ pane: arrowsPane }),
   };
 
@@ -94,6 +97,7 @@ export function createWeatherLayers(map, saved, onChange) {
   function applyOptions() {
     const k = st.wave === 'none' ? 'wave' : st.wave;
     layers.waveField.options.kind = k;
+    layers.windArrows.options.symbol = st.windSymbol;
     Object.assign(layers.waveArrows.options, { kind: k, arrows: st.waveArrows, periods: st.wavePeriods });
   }
 
@@ -128,6 +132,13 @@ export function createWeatherLayers(map, saved, onChange) {
      */
     setToggle(id, on) {
       st[id] = on;
+      applyOptions();
+      all();
+      changed();
+    },
+    /** @param {'arrows' | 'barbs'} symbol */
+    setWindSymbol(symbol) {
+      st.windSymbol = symbol;
       applyOptions();
       all();
       changed();

@@ -47,6 +47,7 @@ const SHELL = [
   './js/map/weather-layers.js',
   './js/map/wind-field.js',
   './js/map/wind-arrows.js',
+  './js/map/wind-barbs.js',
   './js/map/wave-layer.js',
   './js/ui/legend.js',
   './js/ui/probe.js',
