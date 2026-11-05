@@ -18,6 +18,13 @@ export const TIMEZONE = 'Europe/Rome';
 /** Orizzonte massimo di mappa e routing (ore). */
 export const HORIZON_H = 120;
 
+/**
+ * Chiave CARTO Basemaps (gratuita, uso non commerciale: https://carto.com/basemaps/apikey).
+ * È pubblica per natura (finisce nelle URL delle tile); limitarla al dominio dell'app.
+ * Vuota → la mappa CARTO non è disponibile e si usa OpenStreetMap.
+ */
+export const CARTO_BASEMAPS_KEY = 'cb1_52ji_1_36a0d8b38bab12caa7225495';
+
 /** Supabase (fase 2). */
 export const SUPABASE = Object.freeze({ url: '', anonKey: '' });
 
