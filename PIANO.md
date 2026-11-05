@@ -65,6 +65,8 @@ Riferimenti: [SPEC.md](SPEC.md) per i requisiti, [CLAUDE.md](CLAUDE.md) per conv
 
 **Decisioni di riferimento**: 12, 13, 14, 15, 17, 18.
 
+**Da riprendere (richiesta del 2026-11-05)**: posizione più comoda dei correttivi delle polari (efficienza crociera bolina/portanti, riduzione vele bianche), oggi solo nella pagina Profilo: renderli raggiungibili dove si sceglie barca e set di vele per il calcolo della rotta (passi 7–8).
+
 **Passi**
 1. Preparazione linea di costa completa, a tasselli 1°×1° (procedura documentata, file dati): `tools/coastline/README.md`, `data/coastline/*.geojson`.
 2. Indice spaziale, test terra/mare, distanza dalla costa: `js/routing/land.js` + test.
