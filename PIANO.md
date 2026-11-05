@@ -94,9 +94,9 @@ Riferimenti: [SPEC.md](SPEC.md) per i requisiti, [CLAUDE.md](CLAUDE.md) per conv
 **Decisioni di riferimento**: 16, 22.
 
 **Da riprendere (aperti al termine della fase 3, 2026-11-05)**
-- Testo della modale di avviso (SPEC §2.8): dice che le correnti "non sono considerate", ma dalla fase 3 lo sono → nuovo testo da concordare, poi incrementare `disclaimer.version` in `js/i18n/it.js`.
+- ~~Testo della modale di avviso~~: aggiornato (versione 2, correnti "stimate dal modello").
 - Verifica su smartphone del tempo di calcolo di una rotta (voce "calcolo in … s" nel riepilogo; obiettivo < 3 s per ~100 NM).
-- Barbe meteorologiche del vento al posto delle frecce (o come opzione): da chiedere.
+- Barbe meteorologiche del vento: come opzione nel menu Livelli, frecce predefinite (deciso 2026-11-05).
 - Ramo `claude/fase-3-routing-wip` su GitHub da eliminare (a mano).
 
 **Note per lo sviluppo**

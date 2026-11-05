@@ -115,8 +115,8 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Al primo avvio: finestra modale da accettare esplicitamente ("Ho capito"), memorizzata in locale con versione del testo.
 - Testo fisso, sempre visibile, nella barra inferiore: *"Solo pianificazione — non usare per la navigazione"*.
 - Ripetuto nel riepilogo di ogni rotta e nella finestra di partenza.
-- Testo proposto per la modale:
-  > Questa app fornisce stime basate su modelli meteorologici e sulle polari che hai inserito. Le previsioni possono essere sbagliate, la linea di costa è semplificata e non sono considerati fondali, ostacoli, correnti, traffico, zone vietate o condizioni locali. Usala solo per pianificare. Le decisioni in mare spettano allo skipper, sulla base dei bollettini ufficiali e delle carte nautiche.
+- Testo della modale (versione 2, 2026-11-05: le correnti sono nel calcolo dalla fase 3):
+  > Questa app fornisce stime basate su modelli meteorologici e sulle polari che hai inserito. Le previsioni possono essere sbagliate, la linea di costa è semplificata, le correnti sono stimate dal modello e non sono considerati fondali, ostacoli, traffico, zone vietate o condizioni locali. Usala solo per pianificare. Le decisioni in mare spettano allo skipper, sulla base dei bollettini ufficiali e delle carte nautiche.
 
 ### 2.9 Account e dati utente
 
