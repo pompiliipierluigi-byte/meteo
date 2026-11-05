@@ -11,6 +11,7 @@ import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.j
 import { createWeatherLayers } from './map/weather-layers.js';
 import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
+import { initAuth } from './ui/auth.js';
 import { L, AVAILABLE_BASEMAPS } from './map/map.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
@@ -98,6 +99,8 @@ function start() {
     setPref('model', choice);
     loadWeather(false);
   }, () => loadWeather(true));
+
+  initAuth(topbar, menu.addSection(it.auth.section));
 
   const legend = createLegend(document.getElementById('map'));
   const waveNames = { wave: it.layers.waveTotal, wwave: it.layers.waveWind, swell: it.layers.waveSwell };

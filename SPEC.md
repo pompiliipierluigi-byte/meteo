@@ -154,7 +154,7 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 | Libreria | Uso | Motivazione |
 |---|---|---|
 | Leaflet 1.9.x | Mappa | Richiesta dal brief; leggera, stabile. |
-| supabase-js v2 (bundle ESM) | Auth + database | Client ufficiale; gestione sessione e token non banale da riscrivere. |
+| supabase-js v2 (bundle UMD, `vendor/supabase/`) | Auth + database | Client ufficiale; gestione sessione e token non banale da riscrivere. Il pacchetto npm non offre un ESM autosufficiente: si usa il bundle UMD (variabile globale), caricato su richiesta. |
 
 Da **non** usare salvo necessità emersa in sviluppo: librerie per particelle (es. leaflet-velocity: richiede formato grib2json e non è più mantenuta → layer particelle scritto in proprio su canvas), librerie per grafici (il grafico della finestra di partenza è in SVG scritto a mano), indici spaziali (griglia a bucket scritta in proprio, §7.3).
 

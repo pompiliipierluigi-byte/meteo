@@ -2,7 +2,7 @@
 // Percorsi relativi allo scope (sottopercorso /meteo/ su GitHub Pages).
 // I dati meteo non passano da qui: sono in IndexedDB (js/weather/cache.js), consultabili offline.
 
-const VERSION = '1.3';
+const VERSION = '1.4';
 const SHELL_CACHE = `shell-${VERSION}`;
 /** Cache delle tile (conservata tra le versioni), con numero massimo di elementi. */
 // v2: scarta le tile CARTO "API KEY REQUIRED" salvate dalla v1.
@@ -51,6 +51,9 @@ const SHELL = [
   './js/map/wave-layer.js',
   './js/ui/legend.js',
   './js/ui/probe.js',
+  './js/data/supabase.js',
+  './js/ui/auth.js',
+  './vendor/supabase/supabase.js',
   './vendor/leaflet/leaflet-src.esm.js',
   './vendor/leaflet/leaflet.css',
   './vendor/leaflet/images/layers.png',

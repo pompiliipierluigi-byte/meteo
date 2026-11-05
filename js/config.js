@@ -4,7 +4,7 @@
  * Versione dell'app, mostrata nel footer. Incrementarla a ogni pubblicazione insieme a
  * `VERSION` in sw.js (che deve iniziare con lo stesso valore: lo verifica tests/sw-shell.test.js).
  */
-export const APP_VERSION = '1.3';
+export const APP_VERSION = '1.4';
 
 /**
  * Area di lavoro (gradi).
