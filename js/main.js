@@ -66,9 +66,27 @@ function start() {
   state.choice = MODEL_CHOICES.includes(savedChoice) ? savedChoice : 'auto';
 
   const weather = new WeatherService();
+  let loading = false;
+  /** @type {number | undefined} conto alla rovescia dell'attesa di quota */
+  let waitTimer;
   weather.addEventListener('progress', (e) => {
-    const { label, done, total } = /** @type {CustomEvent} */ (e).detail;
-    notice.show(fill(it.notice.loading, { label, done, total }));
+    clearInterval(waitTimer);
+    // Solo durante un caricamento: un evento tardivo non deve coprire un errore già mostrato.
+    if (!loading) return;
+    const { label, done, total, waitMs } = /** @type {CustomEvent} */ (e).detail;
+    const text = fill(it.notice.loading, { label, done, total });
+    if (!(waitMs > 0)) {
+      notice.show(text);
+      return;
+    }
+    const until = Date.now() + waitMs;
+    const tick = () => {
+      if (!loading) return clearInterval(waitTimer);
+      const s = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+      notice.show(`${text} ${fill(it.notice.quotaWait, { s })}`);
+    };
+    tick();
+    waitTimer = window.setInterval(tick, 1000);
   });
 
   const picker = createModelPicker(menu.addSection(it.model.title), topbar, state.choice, (choice) => {
@@ -149,10 +167,10 @@ function start() {
     picker.setBusy(true);
     notice.show(it.notice.loadingStart);
     try {
-      const [wind, waves] = await Promise.all([
-        weather.getWind(state.choice, { force }),
-        weather.getWaves({ force }),
-      ]);
+      loading = true;
+      // In sequenza: l'onda (che al primo avvio calcola anche la maschera mare), poi il vento.
+      const waves = await weather.getWaves({ force });
+      const wind = await weather.getWind(state.choice, { force });
       if (seq !== loadSeq) return;
       state.wind = wind;
       state.waves = waves;
@@ -170,9 +188,12 @@ function start() {
         notice.show(it.notice.offlineNoData, 'warn');
         return;
       }
-      notice.show(err?.quota ? it.notice.quota : fill(it.notice.error, { msg: err?.message ?? String(err) }), 'error');
+      notice.show(fill(err?.quota ? it.notice.quota : it.notice.error, { msg: err?.message ?? String(err) }), 'error');
     } finally {
-      if (seq === loadSeq) picker.setBusy(false);
+      if (seq === loadSeq) {
+        loading = false;
+        picker.setBusy(false);
+      }
     }
   }
 

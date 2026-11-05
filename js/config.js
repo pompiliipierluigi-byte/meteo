@@ -36,8 +36,15 @@ export const OPEN_METEO = Object.freeze({
   forecastDays: 6,
   /** Punti per richiesta multi-coordinata (lunghezza URL contenuta). */
   chunkSize: 100,
-  /** Pausa tra due blocchi consecutivi (ms), per non saturare la quota al minuto. */
+  /** Pausa tra due blocchi consecutivi (ms). */
   chunkPauseMs: 250,
+  /**
+   * Budget di chiamate al minuto (limite gratuito: 600/min, ogni punto = 1 chiamata, ×2 oltre
+   * 10 variabili). Margine per altre schede o ricariche.
+   */
+  callsPerMinute: 500,
+  /** Tentativi su errore 429 della quota al minuto (attesa di un minuto tra uno e l'altro). */
+  maxMinuteRetries: 3,
 });
 
 /** Passo della griglia panoramica per la mappa (gradi). */

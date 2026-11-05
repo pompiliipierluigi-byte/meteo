@@ -2,6 +2,20 @@
 
 import { OPEN_METEO } from '../config.js';
 import { emptyField, windToUV } from './grid.js';
+import { createRateLimiter } from './rate-limit.js';
+
+/** Limitatore condiviso da tutte le richieste dati della pagina. */
+const limiter = createRateLimiter({ budget: OPEN_METEO.callsPerMinute, windowMs: 60e3 });
+
+/**
+ * Peso in quota di una richiesta: un'unità per punto, moltiplicata per ogni blocco di 10 variabili.
+ * @param {number} nPoints
+ * @param {number} nVars
+ * @returns {number}
+ */
+export function requestWeight(nPoints, nVars) {
+  return nPoints * Math.max(1, Math.ceil(nVars / 10));
+}
 
 /** Variabili vento richieste alla Forecast API. */
 export const WIND_VARS = ['wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m'];
@@ -94,11 +108,13 @@ export function parseResponse(json, variables) {
  * @param {'forecast'|'marine'} kind
  * @param {{lat: number, lon: number}[]} points
  * @param {string[]} variables
- * @param {{model?: string, fetchFn?: typeof fetch, onProgress?: (done: number, total: number) => void, signal?: AbortSignal}} [opts]
+ * @param {{model?: string, fetchFn?: typeof fetch, onProgress?: (done: number, total: number) => void,
+ *   onWait?: (waitMs: number) => void, signal?: AbortSignal, limiter?: import('./rate-limit.js').RateLimiter}} [opts]
  * @returns {Promise<{timesMs: number[], series: Record<string, (number|null)[][]>}>}
  */
 export async function fetchPoints(kind, points, variables, opts = {}) {
   const fetchFn = opts.fetchFn ?? fetch;
+  const lim = opts.limiter ?? limiter;
   const size = OPEN_METEO.chunkSize;
   /** @type {number[]} */
   let timesMs = [];
@@ -108,19 +124,31 @@ export async function fetchPoints(kind, points, variables, opts = {}) {
     if (i > 0 && OPEN_METEO.chunkPauseMs) await new Promise((r) => setTimeout(r, OPEN_METEO.chunkPauseMs));
     const chunk = points.slice(i, i + size);
     const url = buildUrl(kind, chunk, variables, { model: opts.model });
-    let res;
-    try {
-      res = await fetchFn(url, { signal: opts.signal });
-    } catch (err) {
-      if (err?.name === 'AbortError') throw err;
-      throw new OpenMeteoError('Open-Meteo non raggiungibile (rete assente?)');
-    }
-    if (!res.ok) {
+    const weight = requestWeight(chunk.length, variables.length);
+    let json;
+    for (let attempt = 0; ; attempt++) {
+      await lim.acquire(weight, opts.onWait);
+      let res;
+      try {
+        res = await fetchFn(url, { signal: opts.signal });
+      } catch (err) {
+        if (err?.name === 'AbortError') throw err;
+        throw new OpenMeteoError('Open-Meteo non raggiungibile (rete assente?)');
+      }
+      if (res.ok) {
+        json = await res.json();
+        break;
+      }
       let reason = `HTTP ${res.status}`;
       try { reason = (await res.json()).reason || reason; } catch { /* corpo non JSON */ }
+      // Quota al minuto: si attende la finestra successiva e si riprova lo stesso blocco.
+      if (res.status === 429 && /minut/i.test(reason) && attempt < OPEN_METEO.maxMinuteRetries) {
+        lim.saturate();
+        continue;
+      }
       throw new OpenMeteoError(`Open-Meteo: ${reason}`, { status: res.status, quota: res.status === 429 });
     }
-    const part = parseResponse(await res.json(), variables);
+    const part = parseResponse(json, variables);
     if (i === 0) timesMs = part.timesMs;
     for (const v of variables) series[v].push(...part.series[v]);
     opts.onProgress?.(Math.min(i + size, points.length), points.length);
