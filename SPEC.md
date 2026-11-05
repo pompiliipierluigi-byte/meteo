@@ -36,7 +36,7 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 
 ### 2.2 Layer vento
 
-- **Particelle animate** su canvas: velocità e direzione derivate dal campo di vento interpolato; colore per intensità.
+- ~~Particelle animate~~: tolte il 2026-11-05 su richiesta (troppo pesanti sul telefono); restano frecce e campo colorato, con opacità di default al 100 %.
 - **Frecce/barbe** su griglia regolare, diradate in base allo zoom, colorate con la stessa scala.
 - **Campo colorato** (heatmap) di intensità, opacità regolabile.
 - Scala colori in nodi, con legenda: 0–5–10–15–20–25–30–35+ kn.
@@ -93,7 +93,7 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Se un punto cade a terra: spostamento automatico al punto di mare più vicino, con avviso.
 - Calcolo a isocrone in **Web Worker** (§6), senza bloccare l'interfaccia, con barra di avanzamento e possibilità di annullare.
 - Evitamento della terra con linea di costa OSM ad alta risoluzione (§7).
-- Output su mappa: rotta, isocrone (opzionali), punti orari con etichette.
+- Output su mappa: rotta, punti orari con etichette (isocrone non disegnate: troppo pesanti sul telefono, 2026-11-05).
 - Output tabellare: per ogni passo orario → ora, posizione, rotta vera, velocità, TWS, TWA, raffica, onda, vela/motore.
 - Riepilogo: durata, distanza percorsa (NM), ore di motore, vento max, raffica max, onda max, ora di arrivo.
 
