@@ -9,8 +9,9 @@ La procedura gira su GitHub Actions (`.github/workflows/coastline.yml`):
 
 1. scarica `land-polygons-split-4326.zip` da https://osmdata.openstreetmap.de (≈ 900 MB) e ritaglia sull'area
    dell'app più 0.2° (lat 39.6–46.0, lon 11.8–19.9) con `ogr2ogr`;
-2. se osmdata non risponde (succede anche da GitHub), scarica da **Overpass** le vie `natural=coastline` dell'area e
-   ricostruisce i poligoni di terra con `land-from-coastline.py` (le linee di costa ritagliate e il bordo dell'area
+2. se osmdata non risponde (succede anche da GitHub), prende le vie `natural=coastline` dagli estratti **Geofabrik**
+   dei paesi costieri (Italia nord-est/centro/sud, Slovenia, Croazia, Bosnia, Montenegro, Albania) con `osmium`
+   (ultima alternativa: **Overpass** a blocchi) e ricostruisce i poligoni di terra con `land-from-coastline.py` (le linee di costa ritagliate e il bordo dell'area
    si dividono in facce; una faccia è terra se la costa più vicina la lascia a sinistra, convenzione OSM);
 3. esegue `make-tiles.py`, che per ogni tassello unisce i poligoni (la versione *split* è divisa in quadrati),
    semplifica con tolleranza ~20 m mantenendo la topologia, arrotonda a 5 decimali (~1 m) e tiene tutte

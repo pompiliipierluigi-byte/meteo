@@ -32,7 +32,7 @@ jobs:
       - name: Strumenti (GDAL, shapely)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq gdal-bin unzip
+          sudo apt-get install -y -qq gdal-bin unzip osmium-tool
           python3 -m pip install --quiet 'shapely>=2,<3'
 
       - name: Land polygons OpenStreetMap (osmdata, se raggiungibile)
@@ -45,8 +45,28 @@ jobs:
             -lco COORDINATE_PRECISION=7 land.geojson land-polygons-split-4326/land_polygons.shp
           echo "Fonte: land polygons osmdata" | tee source.txt
 
-      - name: In alternativa, linee di costa da Overpass (natural=coastline)
+      - name: In alternativa, linee di costa dagli estratti Geofabrik (natural=coastline)
+        id: geofabrik
         if: steps.osmdata.outcome != 'success'
+        continue-on-error: true
+        run: |
+          # Paesi e regioni affacciati sull'area (estratti con vie complete); solo le vie di costa.
+          mkdir -p gf
+          for r in europe/italy/nord-est europe/italy/centro europe/italy/sud europe/slovenia europe/croatia \
+                   europe/bosnia-herzegovina europe/montenegro europe/albania; do
+            f="gf/$(basename "$r").osm.pbf"
+            curl -fsSL --retry 3 --connect-timeout 30 -o "$f" "https://download.geofabrik.de/${r}-latest.osm.pbf"
+            osmium tags-filter --overwrite -o "gf/coast-$(basename "$r").osm.pbf" "$f" w/natural=coastline
+            rm -f "$f"
+          done
+          osmium merge --overwrite -o coast.osm.pbf gf/coast-*.osm.pbf
+          # Linee nell'ordine dei nodi (il verso dice da che parte è la terra); anche le vie chiuse (isole).
+          osmium export --overwrite -f geojson --geometry-types=linestring -o coast-lines.geojson coast.osm.pbf
+          python3 tools/coastline/land-from-coastline.py coast-lines.geojson land.geojson 11.8 39.6 19.9 46.0
+          echo "Fonte: vie natural=coastline OSM dagli estratti Geofabrik ($(date -u +%Y-%m-%d))" | tee source.txt
+
+      - name: Ultima alternativa, linee di costa da Overpass (natural=coastline)
+        if: steps.osmdata.outcome != 'success' && steps.geofabrik.outcome != 'success'
         env:
           UA: meteo-adriatico-coastline/1.0 (+https://github.com/pompiliipierluigi-byte/meteo)
         run: |
@@ -55,14 +75,12 @@ jobs:
           fetch() {
             local bbox="$1" out="$2"
             local q="[out:xml][timeout:180];way[\"natural\"=\"coastline\"]($bbox);(._;>;);out body;"
-            for api in https://overpass-api.de/api/interpreter https://overpass.private.coffee/api/interpreter https://overpass.kumi.systems/api/interpreter https://maps.mail.ru/osm/tools/overpass/api/interpreter; do
-              for attempt in 1 2; do
-                if curl -fsS -A "$UA" --connect-timeout 30 --max-time 300 -o "$out" --data-urlencode "data=$q" "$api" && grep -q '<osm' "$out"; then
-                  echo "  $bbox: $(grep -c '<way' "$out") vie da $api"
-                  return 0
-                fi
-                sleep 10
-              done
+            for api in https://overpass-api.de/api/interpreter https://overpass.private.coffee/api/interpreter https://overpass.kumi.systems/api/interpreter; do
+              if curl -fsS -A "$UA" --connect-timeout 30 --max-time 200 -o "$out" --data-urlencode "data=$q" "$api" && grep -q '<osm' "$out"; then
+                echo "  $bbox: $(grep -c '<way' "$out") vie da $api"
+                return 0
+              fi
+              sleep 5
             done
             return 1
           }
@@ -74,22 +92,11 @@ jobs:
               sleep 2
             done
           done
-          python3 - <<'PY'
-          import json, subprocess, glob
-          feats, seen = [], set()
-          for f in sorted(glob.glob('osm/*.osm')):
-              subprocess.run(['ogr2ogr', '-f', 'GeoJSON', f + '.geojson', f, 'lines'], check=True)
-              for ft in json.load(open(f + '.geojson'))['features']:
-                  i = ft['properties'].get('osm_id')
-                  if i in seen:
-                      continue
-                  seen.add(i)
-                  feats.append({'type': 'Feature', 'properties': {'osm_id': i}, 'geometry': ft['geometry']})
-          json.dump({'type': 'FeatureCollection', 'features': feats}, open('coast-lines.geojson', 'w'))
-          print(len(feats), 'vie di costa uniche')
-          PY
+          for f in osm/*.osm; do osmium sort --overwrite -o "$f.pbf" "$f"; done
+          osmium merge --overwrite -o coast.osm.pbf osm/*.osm.pbf
+          osmium export --overwrite -f geojson --geometry-types=linestring -o coast-lines.geojson coast.osm.pbf
           python3 tools/coastline/land-from-coastline.py coast-lines.geojson land.geojson 11.8 39.6 19.9 46.0
-          echo "Fonte: linee natural=coastline via Overpass ($(date -u +%Y-%m-%d))" | tee source.txt
+          echo "Fonte: vie natural=coastline OSM via Overpass ($(date -u +%Y-%m-%d))" | tee source.txt
 
       - name: Tasselli
         run: |
