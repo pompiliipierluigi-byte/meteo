@@ -168,6 +168,13 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 
 ---
 
+### 2.14 Località e luoghi salvati
+
+- Campo "Porto o località" nel pannello rotta (pulsanti P / + / A: partenza, waypoint, arrivo) e nella pagina sole/luna/maree.
+- Mentre si scrive: ricerca locale tra i porti inclusi (`data/places/ports.json`, 85 porti e marine di Italia, Slovenia, Croazia, Montenegro e Albania, con i nomi italiani storici come alias: Zara, Spalato, Lussino…) e i luoghi salvati, senza rete. Coordinate in acqua libera vicino al porto (`tools/places/fit-ports.mjs`, ≥ 0.15 NM dalla costa OSM).
+- "Cerca online" (o Invio): Open-Meteo Geocoding, una richiesta per ricerca, solo risultati nell'area dell'app. Il punto si sposta al mare più vicino (entro 5 NM) come i punti toccati sulla mappa.
+- Luoghi salvati e porto base: §4.6.
+
 ## 3. Architettura
 
 ### 3.1 Vincoli

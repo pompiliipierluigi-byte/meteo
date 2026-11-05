@@ -1,0 +1,734 @@
+{
+ "note": "Porti e marine dell'area di lavoro: coordinate in acqua libera vicino al porto (almeno 0.15 NM dalla costa OSM, tools/places/fit-ports.mjs). Nomi italiani storici come alias.",
+ "ports": [
+  {
+   "name": "Trieste",
+   "country": "IT",
+   "lat": 45.6522,
+   "lon": 13.7578
+  },
+  {
+   "name": "Monfalcone",
+   "country": "IT",
+   "lat": 45.7815,
+   "lon": 13.5536
+  },
+  {
+   "name": "Grado",
+   "country": "IT",
+   "lat": 45.672,
+   "lon": 13.3877
+  },
+  {
+   "name": "Lignano Sabbiadoro",
+   "country": "IT",
+   "lat": 45.6857,
+   "lon": 13.1479,
+   "aliases": [
+    "Lignano"
+   ]
+  },
+  {
+   "name": "Caorle",
+   "country": "IT",
+   "lat": 45.5949,
+   "lon": 12.8884
+  },
+  {
+   "name": "Jesolo",
+   "country": "IT",
+   "lat": 45.495,
+   "lon": 12.64,
+   "aliases": [
+    "Cortellazzo"
+   ]
+  },
+  {
+   "name": "Venezia (Lido)",
+   "country": "IT",
+   "lat": 45.417,
+   "lon": 12.3874,
+   "aliases": [
+    "Venezia",
+    "Lido"
+   ]
+  },
+  {
+   "name": "Chioggia",
+   "country": "IT",
+   "lat": 45.2201,
+   "lon": 12.3043
+  },
+  {
+   "name": "Porto Levante",
+   "country": "IT",
+   "lat": 45.0598,
+   "lon": 12.3828
+  },
+  {
+   "name": "Porto Garibaldi",
+   "country": "IT",
+   "lat": 44.68,
+   "lon": 12.25,
+   "aliases": [
+    "Comacchio"
+   ]
+  },
+  {
+   "name": "Marina di Ravenna",
+   "country": "IT",
+   "lat": 44.4911,
+   "lon": 12.2889,
+   "aliases": [
+    "Ravenna"
+   ]
+  },
+  {
+   "name": "Cervia",
+   "country": "IT",
+   "lat": 44.2661,
+   "lon": 12.3639
+  },
+  {
+   "name": "Cesenatico",
+   "country": "IT",
+   "lat": 44.21,
+   "lon": 12.4009
+  },
+  {
+   "name": "Rimini",
+   "country": "IT",
+   "lat": 44.0768,
+   "lon": 12.5821
+  },
+  {
+   "name": "Cattolica",
+   "country": "IT",
+   "lat": 43.974,
+   "lon": 12.75
+  },
+  {
+   "name": "Pesaro",
+   "country": "IT",
+   "lat": 43.9228,
+   "lon": 12.9126
+  },
+  {
+   "name": "Fano",
+   "country": "IT",
+   "lat": 43.8508,
+   "lon": 13.0259
+  },
+  {
+   "name": "Senigallia",
+   "country": "IT",
+   "lat": 43.7207,
+   "lon": 13.2255
+  },
+  {
+   "name": "Ancona",
+   "country": "IT",
+   "lat": 43.6229,
+   "lon": 13.4912,
+   "aliases": [
+    "Marina Dorica"
+   ]
+  },
+  {
+   "name": "Numana",
+   "country": "IT",
+   "lat": 43.51,
+   "lon": 13.6309
+  },
+  {
+   "name": "Porto San Giorgio",
+   "country": "IT",
+   "lat": 43.1809,
+   "lon": 13.8034
+  },
+  {
+   "name": "San Benedetto del Tronto",
+   "country": "IT",
+   "lat": 42.9543,
+   "lon": 13.8944,
+   "aliases": [
+    "San Benedetto"
+   ]
+  },
+  {
+   "name": "Giulianova",
+   "country": "IT",
+   "lat": 42.7589,
+   "lon": 13.9726
+  },
+  {
+   "name": "Pescara",
+   "country": "IT",
+   "lat": 42.4726,
+   "lon": 14.2209
+  },
+  {
+   "name": "Ortona",
+   "country": "IT",
+   "lat": 42.3524,
+   "lon": 14.4147
+  },
+  {
+   "name": "Vasto (Punta Penna)",
+   "country": "IT",
+   "lat": 42.1765,
+   "lon": 14.7045,
+   "aliases": [
+    "Vasto",
+    "Punta Penna"
+   ]
+  },
+  {
+   "name": "Termoli",
+   "country": "IT",
+   "lat": 41.9986,
+   "lon": 15.0041
+  },
+  {
+   "name": "Isole Tremiti",
+   "country": "IT",
+   "lat": 42.1191,
+   "lon": 15.5089,
+   "aliases": [
+    "Tremiti",
+    "San Domino"
+   ]
+  },
+  {
+   "name": "Rodi Garganico",
+   "country": "IT",
+   "lat": 41.933,
+   "lon": 15.88
+  },
+  {
+   "name": "Vieste",
+   "country": "IT",
+   "lat": 41.8859,
+   "lon": 16.1875
+  },
+  {
+   "name": "Manfredonia",
+   "country": "IT",
+   "lat": 41.6246,
+   "lon": 15.9212
+  },
+  {
+   "name": "Barletta",
+   "country": "IT",
+   "lat": 41.3262,
+   "lon": 16.2918
+  },
+  {
+   "name": "Trani",
+   "country": "IT",
+   "lat": 41.2847,
+   "lon": 16.4166
+  },
+  {
+   "name": "Molfetta",
+   "country": "IT",
+   "lat": 41.2078,
+   "lon": 16.6032
+  },
+  {
+   "name": "Bari",
+   "country": "IT",
+   "lat": 41.1363,
+   "lon": 16.8574
+  },
+  {
+   "name": "Mola di Bari",
+   "country": "IT",
+   "lat": 41.067,
+   "lon": 17.0917
+  },
+  {
+   "name": "Monopoli",
+   "country": "IT",
+   "lat": 40.9617,
+   "lon": 17.3
+  },
+  {
+   "name": "Brindisi",
+   "country": "IT",
+   "lat": 40.6472,
+   "lon": 17.9556
+  },
+  {
+   "name": "Otranto",
+   "country": "IT",
+   "lat": 40.1522,
+   "lon": 18.4959
+  },
+  {
+   "name": "Capodistria / Koper",
+   "country": "SI",
+   "lat": 45.5533,
+   "lon": 13.7246,
+   "aliases": [
+    "Koper",
+    "Capodistria"
+   ]
+  },
+  {
+   "name": "Isola / Izola",
+   "country": "SI",
+   "lat": 45.5447,
+   "lon": 13.66,
+   "aliases": [
+    "Izola",
+    "Isola"
+   ]
+  },
+  {
+   "name": "Pirano / Piran",
+   "country": "SI",
+   "lat": 45.5323,
+   "lon": 13.57,
+   "aliases": [
+    "Piran",
+    "Pirano"
+   ]
+  },
+  {
+   "name": "Portorose / Portorož",
+   "country": "SI",
+   "lat": 45.5098,
+   "lon": 13.5897,
+   "aliases": [
+    "Portoroz",
+    "Portorose"
+   ]
+  },
+  {
+   "name": "Umago / Umag",
+   "country": "HR",
+   "lat": 45.4302,
+   "lon": 13.5153,
+   "aliases": [
+    "Umag",
+    "Umago"
+   ]
+  },
+  {
+   "name": "Cittanova / Novigrad",
+   "country": "HR",
+   "lat": 45.3182,
+   "lon": 13.5519,
+   "aliases": [
+    "Novigrad",
+    "Cittanova"
+   ]
+  },
+  {
+   "name": "Parenzo / Poreč",
+   "country": "HR",
+   "lat": 45.2195,
+   "lon": 13.5884,
+   "aliases": [
+    "Porec",
+    "Parenzo"
+   ]
+  },
+  {
+   "name": "Rovigno / Rovinj",
+   "country": "HR",
+   "lat": 45.0813,
+   "lon": 13.6262,
+   "aliases": [
+    "Rovinj",
+    "Rovigno"
+   ]
+  },
+  {
+   "name": "Pola / Pula",
+   "country": "HR",
+   "lat": 44.8685,
+   "lon": 13.8375,
+   "aliases": [
+    "Pula",
+    "Pola"
+   ]
+  },
+  {
+   "name": "Fiume / Rijeka",
+   "country": "HR",
+   "lat": 45.3213,
+   "lon": 14.4339,
+   "aliases": [
+    "Rijeka",
+    "Fiume"
+   ]
+  },
+  {
+   "name": "Abbazia / Opatija",
+   "country": "HR",
+   "lat": 45.332,
+   "lon": 14.3102,
+   "aliases": [
+    "Opatija",
+    "Abbazia"
+   ]
+  },
+  {
+   "name": "Cherso / Cres",
+   "country": "HR",
+   "lat": 44.9546,
+   "lon": 14.4075,
+   "aliases": [
+    "Cres",
+    "Cherso"
+   ]
+  },
+  {
+   "name": "Lussinpiccolo / Mali Lošinj",
+   "country": "HR",
+   "lat": 44.539,
+   "lon": 14.46,
+   "aliases": [
+    "Mali Losinj",
+    "Lussino",
+    "Lussinpiccolo",
+    "Losinj"
+   ]
+  },
+  {
+   "name": "Veglia / Krk",
+   "country": "HR",
+   "lat": 45.0223,
+   "lon": 14.5792,
+   "aliases": [
+    "Krk",
+    "Veglia"
+   ]
+  },
+  {
+   "name": "Arbe / Rab",
+   "country": "HR",
+   "lat": 44.7525,
+   "lon": 14.7589,
+   "aliases": [
+    "Rab",
+    "Arbe"
+   ]
+  },
+  {
+   "name": "Segna / Senj",
+   "country": "HR",
+   "lat": 44.9921,
+   "lon": 14.8946,
+   "aliases": [
+    "Senj",
+    "Segna"
+   ]
+  },
+  {
+   "name": "Novaglia / Novalja",
+   "country": "HR",
+   "lat": 44.5557,
+   "lon": 14.8719,
+   "aliases": [
+    "Novalja",
+    "Novaglia"
+   ]
+  },
+  {
+   "name": "Pago / Pag",
+   "country": "HR",
+   "lat": 44.4446,
+   "lon": 15.0488,
+   "aliases": [
+    "Pag",
+    "Pago"
+   ]
+  },
+  {
+   "name": "Zara / Zadar",
+   "country": "HR",
+   "lat": 44.1115,
+   "lon": 15.2215,
+   "aliases": [
+    "Zadar",
+    "Zara"
+   ]
+  },
+  {
+   "name": "Zaravecchia / Biograd na Moru",
+   "country": "HR",
+   "lat": 43.9427,
+   "lon": 15.4409,
+   "aliases": [
+    "Biograd",
+    "Zaravecchia"
+   ]
+  },
+  {
+   "name": "Morter / Murter",
+   "country": "HR",
+   "lat": 43.825,
+   "lon": 15.5873,
+   "aliases": [
+    "Murter",
+    "Morter"
+   ]
+  },
+  {
+   "name": "Sebenico / Šibenik",
+   "country": "HR",
+   "lat": 43.7323,
+   "lon": 15.8872,
+   "aliases": [
+    "Sibenik",
+    "Sebenico"
+   ]
+  },
+  {
+   "name": "Capocesto / Primošten",
+   "country": "HR",
+   "lat": 43.5843,
+   "lon": 15.9155,
+   "aliases": [
+    "Primosten",
+    "Capocesto"
+   ]
+  },
+  {
+   "name": "Rogoznica",
+   "country": "HR",
+   "lat": 43.5306,
+   "lon": 15.9745,
+   "aliases": [
+    "Porto Taglia"
+   ]
+  },
+  {
+   "name": "Traù / Trogir",
+   "country": "HR",
+   "lat": 43.5081,
+   "lon": 16.2514,
+   "aliases": [
+    "Trogir",
+    "Trau"
+   ]
+  },
+  {
+   "name": "Spalato / Split",
+   "country": "HR",
+   "lat": 43.498,
+   "lon": 16.4395,
+   "aliases": [
+    "Split",
+    "Spalato"
+   ]
+  },
+  {
+   "name": "Milna (Brazza / Brač)",
+   "country": "HR",
+   "lat": 43.3288,
+   "lon": 16.4313,
+   "aliases": [
+    "Milna",
+    "Brac",
+    "Brazza"
+   ]
+  },
+  {
+   "name": "Bol (Brač)",
+   "country": "HR",
+   "lat": 43.2579,
+   "lon": 16.6563,
+   "aliases": [
+    "Bol"
+   ]
+  },
+  {
+   "name": "Lesina / Hvar",
+   "country": "HR",
+   "lat": 43.1678,
+   "lon": 16.4344,
+   "aliases": [
+    "Hvar",
+    "Lesina"
+   ]
+  },
+  {
+   "name": "Cittavecchia / Stari Grad",
+   "country": "HR",
+   "lat": 43.1849,
+   "lon": 16.5817,
+   "aliases": [
+    "Stari Grad",
+    "Cittavecchia"
+   ]
+  },
+  {
+   "name": "Lissa / Vis",
+   "country": "HR",
+   "lat": 43.0613,
+   "lon": 16.1926,
+   "aliases": [
+    "Vis",
+    "Lissa"
+   ]
+  },
+  {
+   "name": "Comisa / Komiža",
+   "country": "HR",
+   "lat": 43.0421,
+   "lon": 16.0844,
+   "aliases": [
+    "Komiza",
+    "Comisa"
+   ]
+  },
+  {
+   "name": "Macarsca / Makarska",
+   "country": "HR",
+   "lat": 43.2978,
+   "lon": 17.0099,
+   "aliases": [
+    "Makarska",
+    "Macarsca"
+   ]
+  },
+  {
+   "name": "Curzola / Korčula",
+   "country": "HR",
+   "lat": 42.9603,
+   "lon": 17.1404,
+   "aliases": [
+    "Korcula",
+    "Curzola"
+   ]
+  },
+  {
+   "name": "Lagosta / Lastovo (Ubli)",
+   "country": "HR",
+   "lat": 42.7494,
+   "lon": 16.8228,
+   "aliases": [
+    "Lastovo",
+    "Lagosta",
+    "Ubli"
+   ]
+  },
+  {
+   "name": "Meleda / Mljet (Polače)",
+   "country": "HR",
+   "lat": 42.79,
+   "lon": 17.44,
+   "aliases": [
+    "Mljet",
+    "Meleda",
+    "Polace"
+   ]
+  },
+  {
+   "name": "Ragusa / Dubrovnik",
+   "country": "HR",
+   "lat": 42.6663,
+   "lon": 18.0751,
+   "aliases": [
+    "Dubrovnik",
+    "Ragusa",
+    "Gruz"
+   ]
+  },
+  {
+   "name": "Ragusavecchia / Cavtat",
+   "country": "HR",
+   "lat": 42.5867,
+   "lon": 18.2205,
+   "aliases": [
+    "Cavtat",
+    "Ragusavecchia"
+   ]
+  },
+  {
+   "name": "Castelnuovo / Herceg Novi",
+   "country": "ME",
+   "lat": 42.4492,
+   "lon": 18.5285,
+   "aliases": [
+    "Herceg Novi",
+    "Castelnuovo"
+   ]
+  },
+  {
+   "name": "Teodo / Tivat",
+   "country": "ME",
+   "lat": 42.4331,
+   "lon": 18.6852,
+   "aliases": [
+    "Tivat",
+    "Teodo",
+    "Porto Montenegro"
+   ]
+  },
+  {
+   "name": "Cattaro / Kotor",
+   "country": "ME",
+   "lat": 42.4282,
+   "lon": 18.7642,
+   "aliases": [
+    "Kotor",
+    "Cattaro"
+   ]
+  },
+  {
+   "name": "Budua / Budva",
+   "country": "ME",
+   "lat": 42.2814,
+   "lon": 18.8436,
+   "aliases": [
+    "Budva",
+    "Budua"
+   ]
+  },
+  {
+   "name": "Antivari / Bar",
+   "country": "ME",
+   "lat": 42.0942,
+   "lon": 19.083,
+   "aliases": [
+    "Bar",
+    "Antivari"
+   ]
+  },
+  {
+   "name": "San Giovanni di Medua / Shëngjin",
+   "country": "AL",
+   "lat": 41.8081,
+   "lon": 19.5926,
+   "aliases": [
+    "Shengjin",
+    "San Giovanni di Medua"
+   ]
+  },
+  {
+   "name": "Durazzo / Durrës",
+   "country": "AL",
+   "lat": 41.3093,
+   "lon": 19.4543,
+   "aliases": [
+    "Durres",
+    "Durazzo"
+   ]
+  },
+  {
+   "name": "Valona / Vlorë",
+   "country": "AL",
+   "lat": 40.4506,
+   "lon": 19.4774,
+   "aliases": [
+    "Vlore",
+    "Valona"
+   ]
+  }
+ ]
+}

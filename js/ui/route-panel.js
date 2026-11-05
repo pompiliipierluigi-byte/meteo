@@ -10,6 +10,7 @@ import { fill } from '../lib/text.js';
 import { modelLabel } from '../weather/models.js';
 import { departureTimes, runDepartureWindow } from '../routing/departure-window.js';
 import { categorize, CATEGORIES } from '../routing/departure-categories.js';
+import { createPlacePicker } from './place-picker.js';
 import { windowChart, CHART_COLORS } from './window-chart.js';
 
 /**
@@ -27,6 +28,8 @@ import { windowChart, CHART_COLORS } from './window-chart.js';
  * @property {ReturnType<typeof import('../data/routes-repo.js').createRoutesRepo>} routesRepo
  * @property {(onOpen: (r: import('../data/routes-repo.js').SavedRoute) => void) => void} openSaved elenco delle rotte salvate
  * @property {(tMs: number) => void} [setTime] porta il cursore temporale a un istante
+ * @property {() => import('../places/search.js').Place[]} [savedPlaces] luoghi salvati (per la ricerca)
+ * @property {(p: import('../places/search.js').Place) => HTMLElement | null} [placeExtra] azioni in più su un risultato (salva)
  */
 
 /**
@@ -71,6 +74,16 @@ export function createRoutePanel(host, topbar, points, deps) {
   const pickText = el('span', '');
   pickBar.append(pickText, btn(t.cancelPick, () => points.pick(null), 'btn-small'));
   const pointsBox = el('div', 'route-points');
+  // Località: partenza, waypoint o arrivo da porto, luogo salvato o ricerca online.
+  const picker = createPlacePicker({
+    actions: [
+      { label: 'P', title: t.asStart, onPick: (p) => points.place('start', p) },
+      { label: '+', title: t.asWaypoint, onPick: (p) => points.place('waypoint', p) },
+      { label: 'A', title: t.asEnd, onPick: (p) => points.place('end', p) },
+    ],
+    saved: () => deps.savedPlaces?.() ?? [],
+    extra: (p) => deps.placeExtra?.(p) ?? null,
+  });
   const body = el('div', 'route-sheet-body');
   const optionsBox = el('div', 'route-options');
   const runBox = el('div', 'route-run');
@@ -120,7 +133,7 @@ export function createRoutePanel(host, topbar, points, deps) {
       btn(picking === 'waypoint' ? t.tapNow : t.addWaypoint, () => points.pick(picking === 'waypoint' ? null : 'waypoint'), picking === 'waypoint' ? 'btn-small active' : 'btn-small'),
       btn(t.clear, () => points.clear(), 'btn-small'),
     );
-    pointsBox.append(tools);
+    pointsBox.append(tools, picker);
   }
 
   points.onChange(() => {

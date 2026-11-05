@@ -613,6 +613,13 @@ button {
 .routes-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .routes-item { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem; border: 1px solid var(--c-border); border-radius: var(--radius); }
 .routes-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.place-picker { display: flex; flex-direction: column; gap: 0.3rem; }
+.place-row { display: flex; gap: 0.4rem; }
+.place-row input { flex: 1; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--c-border); border-radius: var(--radius); font: inherit; }
+.place-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.place-item { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; padding: 0.25rem 0.4rem; border: 1px solid var(--c-border); border-radius: var(--radius); }
+.place-text { display: flex; flex-direction: column; min-width: 0; }
+.place-text strong { font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .alm-place { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.4rem; }
 .alm-days { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.6rem 0 0.2rem; }
 .alm-h { margin: 0.9rem 0 0.3rem; font-size: 0.95rem; }

@@ -19,6 +19,7 @@ import { BBOX } from '../config.js';
  * @property {(i: number) => void} removeWaypoint
  * @property {() => void} clear
  * @property {(route: LatLon[]) => void} set partenza, waypoint…, arrivo (rotta salvata riaperta)
+ * @property {(role: 'start' | 'end' | 'waypoint', p: LatLon) => Promise<boolean>} place punto da una località (spostato al mare)
  * @property {(fn: () => void) => void} onChange
  */
 
@@ -163,6 +164,21 @@ export function createRoutePoints(map, L, deps) {
       end = null;
       waypoints = [];
       changed();
+    },
+    async place(role, p) {
+      const q = await toSea({ lat: p.lat, lon: p.lon });
+      if (!q) {
+        changed();
+        return false;
+      }
+      const v = { lat: q.lat, lon: q.lon };
+      if (role === 'start') start = v;
+      else if (role === 'end') end = v;
+      else waypoints.push(v);
+      if (!q.moved) deps.notify('');
+      map.panTo([v.lat, v.lon]);
+      changed();
+      return true;
     },
     set(route) {
       if (route.length < 2) return;

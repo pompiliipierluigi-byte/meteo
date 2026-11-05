@@ -5,6 +5,7 @@ import { openPanel, el, btn } from './panel.js';
 import { dayEphemeris, nextPhases } from '../lib/astro.js';
 import { formatLatLon, formatTime, formatShortDateTime, startOfLocalDay, formatHm, localHour, fmtNum } from '../lib/format.js';
 import { getTide, tideExtremes } from '../weather/tides.js';
+import { createPlacePicker } from './place-picker.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const DAY = 86400e3;
@@ -88,7 +89,7 @@ function tideChart(tide, day0, ext) {
 
 /**
  * Apre la pagina.
- * @param {{place: Place, mapCenter: () => Place, onPickPlace?: (cb: (p: Place) => void) => HTMLElement | null}} deps
+ * @param {{place: Place, mapCenter: () => Place, savedPlaces?: () => import('../places/search.js').Place[]}} deps
  */
 export function openAlmanacPanel(deps) {
   const t = it.almanac;
@@ -119,6 +120,11 @@ export function openAlmanacPanel(deps) {
     render();
   }
 
+  const picker = createPlacePicker({
+    actions: [{ label: t.choose, onPick: (p) => setPlace(p) }],
+    saved: () => deps.savedPlaces?.() ?? [],
+  });
+
   /** @param {Place} p */
   function setPlace(p) {
     place = p;
@@ -142,9 +148,7 @@ export function openAlmanacPanel(deps) {
     head.append(el('strong', '', place.name ?? t.point), el('small', 'muted', formatLatLon(place.lat, place.lon)));
     const tools = el('div', 'btn-row');
     tools.append(btn(t.mapCenter, () => setPlace({ ...deps.mapCenter(), name: t.mapCenterName }), 'btn-small'), btn(t.gps, gps, 'btn-small'));
-    const picker = deps.onPickPlace?.((p) => setPlace(p));
-    body.append(head, tools);
-    if (picker) body.append(picker);
+    body.append(head, tools, picker);
     // Giorni.
     const days = el('div', 'alm-days');
     const today = startOfLocalDay(Date.now());
