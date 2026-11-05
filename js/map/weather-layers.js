@@ -5,7 +5,6 @@ import { windFieldLayer } from './wind-field.js';
 import { windArrowsLayer } from './wind-arrows.js';
 import { waveFieldLayer, waveArrowsLayer } from './wave-layer.js';
 import { currentLayer } from './current-layer.js';
-import { createLandMask } from './land-mask.js';
 
 /** @typedef {'windField' | 'windArrows' | 'waveArrows' | 'wavePeriods' | 'currents'} ToggleId */
 /** @typedef {'none' | import('./wave-layer.js').WaveKind} WaveChoice */
@@ -58,18 +57,13 @@ export function createWeatherLayers(map, saved, onChange) {
   if (!['arrows', 'barbs'].includes(st.windSymbol)) st.windSymbol = 'arrows';
 
   const kind = st.wave === 'none' ? 'wave' : st.wave;
-  // Campi e frecce solo sul mare: la terra resta visibile (costa, porti, punti della rotta).
-  const landMask = createLandMask(() => all());
   const layers = {
-    waveField: waveFieldLayer({ pane: fieldPane, opacity: st.opacity, kind, landMask }),
-    windField: windFieldLayer({ pane: fieldPane, opacity: st.opacity, landMask }),
-    waveArrows: waveArrowsLayer({ pane: arrowsPane, kind, landMask }),
-    windArrows: windArrowsLayer({ pane: arrowsPane, symbol: st.windSymbol, landMask }),
-    currents: currentLayer({ pane: arrowsPane, landMask }),
+    waveField: waveFieldLayer({ pane: fieldPane, opacity: st.opacity, kind }),
+    windField: windFieldLayer({ pane: fieldPane, opacity: st.opacity }),
+    waveArrows: waveArrowsLayer({ pane: arrowsPane, kind }),
+    windArrows: windArrowsLayer({ pane: arrowsPane, symbol: st.windSymbol }),
+    currents: currentLayer({ pane: arrowsPane }),
   };
-  const loadLand = () => landMask.ensure(map.getBounds());
-  map.on('moveend', loadLand);
-  loadLand();
 
   /** @type {import('../weather/grid.js').WeatherField | null} */
   let windData = null;

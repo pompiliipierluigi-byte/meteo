@@ -39,7 +39,6 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - ~~Particelle animate~~: tolte il 2026-11-05 su richiesta (troppo pesanti sul telefono); restano frecce e campo colorato, con opacità di default al 100 %.
 - **Frecce** (default) o **barbe meteorologiche** (opzione nel menu, 2026-11-05) su griglia regolare, diradate in base allo zoom, colorate con la stessa scala. Barbe: asta verso la provenienza, alette sul lato orario, pennone 50 kn, aletta 10 kn, mezza aletta 5 kn, cerchio sotto 2.5 kn.
 - **Campo colorato** (heatmap) di intensità, opacità regolabile.
-- Campi colorati e frecce (vento, onda, correnti) **solo sul mare**: ritagliati sulla linea di costa OSM (§7), così costa, porti e punti della rotta restano visibili (2026-11-05).
 - Scala colori in nodi, con legenda: 0–5–10–15–20–25–30–35+ kn.
 - Ogni sotto-layer attivabile singolarmente.
 

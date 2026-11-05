@@ -50,8 +50,7 @@ export function ensurePane(map, name, zIndex) {
 
 /**
  * Layer canvas. Le sottoclassi implementano `draw(ctx, size)` e possono usare `onMoveStart()`.
- * Opzioni: `pane` (nome), `dprMax` (densità massima del canvas), `landMask` (terra cancellata dopo
- * il disegno, vedi land-mask.js).
+ * Opzioni: `pane` (nome), `dprMax` (densità massima del canvas).
  */
 export const CanvasLayer = L.Layer.extend({
   options: { pane: 'overlayPane', dprMax: 2 },
@@ -106,7 +105,6 @@ export const CanvasLayer = L.Layer.extend({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.x, size.y);
     this.draw(ctx, size, dpr);
-    this.options.landMask?.erase(ctx, map);
   },
 
   /**
