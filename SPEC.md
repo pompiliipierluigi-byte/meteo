@@ -154,7 +154,7 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 | Libreria | Uso | Motivazione |
 |---|---|---|
 | Leaflet 1.9.x | Mappa | Richiesta dal brief; leggera, stabile. |
-| supabase-js v2 (bundle ESM) | Auth + database | Client ufficiale; gestione sessione e token non banale da riscrivere. |
+| supabase-js v2 (bundle UMD, `vendor/supabase/`) | Auth + database | Client ufficiale; gestione sessione e token non banale da riscrivere. Il pacchetto npm non offre un ESM autosufficiente: si usa il bundle UMD (variabile globale), caricato su richiesta. |
 
 Da **non** usare salvo necessità emersa in sviluppo: librerie per particelle (es. leaflet-velocity: richiede formato grib2json e non è più mantenuta → layer particelle scritto in proprio su canvas), librerie per grafici (il grafico della finestra di partenza è in SVG scritto a mano), indici spaziali (griglia a bucket scritta in proprio, §7.3).
 
@@ -357,8 +357,10 @@ TWA\TWS;6;8;10;12;14;16;20
 
 ### 5.4 Importazione ORC
 
-- Indice e dati da `https://jieter.github.io/orc-data/site/` (struttura dei file da verificare in fase 2: indice delle barche + un JSON per barca con sezione VPP: angoli, TWS, velocità, angoli/velocità ottimi di bolina e poppa).
-- Ricerca client-side sull'indice (cache IndexedDB).
+- Schede da `https://jieter.github.io/orc-data/site/data/<NAZ>/<numero>.json` (copia di riserva su `raw.githubusercontent.com/jieter/orc-data/master/site/data/…`). Struttura verificata: `vpp.angles` (TWA, es. 52…150), `vpp.speeds` (TWS, es. 4…24), `vpp["<twa>"]` = velocità per TWS, `beat_angle`/`beat_vmg`, `run_angle`/`run_vmg` (gli ottimi sono **VMG**: velocità barca = VMG / cos angolo).
+- L'indice pubblicato da orc-data (`site/index.json`) è incompleto (34 barche al 2026-11-05, contro ~18 000 schede): l'app usa un **indice proprio**, `data/orc/index.json` (numero velico, nome, tipo, anno, LOA), generato da `tools/orc/make-index.mjs` dalle schede del repository; da rigenerare quando orc-data pubblica un nuovo anno.
+- Ricerca client-side sull'indice (scaricato su richiesta, conservato dal service worker).
+- Oltre l'ultimo angolo della tabella (150°) si usa il punto di poppa ottimo e poi VMG costante fino a 180° (§5.2).
 - Le polari ORC sono calcolate con vele da regata (spinnaker/gennaker nelle portanti) → importate come set **full**.
 - Set **vele bianche**: non fornito da ORC → derivato con la riduzione del profilo (§5.2); l'utente può sostituirlo con una polare propria.
 
@@ -504,5 +506,5 @@ Tutte le domande sono state chiuse il 2026-11-04. Numeri mantenuti perché richi
 
 - ~~Identificativi esatti dei modelli Open-Meteo, orizzonte di ICON-2I, risoluzione ECMWF.~~ Verificati in fase 1 (§3.4).
 - Peso in quota delle richieste multi-punto Open-Meteo.
-- Struttura dei file di orc-data.
+- ~~Struttura dei file di orc-data.~~ Verificata in fase 2 (§5.4).
 - Pesi del punteggio "Lazy" (proposta da validare sui primi casi reali).

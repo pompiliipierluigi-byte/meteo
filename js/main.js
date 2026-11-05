@@ -11,6 +11,15 @@ import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.j
 import { createWeatherLayers } from './map/weather-layers.js';
 import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
+import { initAuth } from './ui/auth.js';
+import { getClient } from './data/supabase.js';
+import { createBoatsRepo } from './data/boats-repo.js';
+import { openBoatsPanel } from './ui/boats-panel.js';
+import { createProfileRepo, cleanProfile } from './data/profile-repo.js';
+import { openProfilePanel } from './ui/profile-panel.js';
+import { polarChart } from './ui/polar-chart.js';
+import { correctionsFor, PROFILE_DEFAULTS } from './data/profile-repo.js';
+import { errorMessage } from './data/supabase.js';
 import { L, AVAILABLE_BASEMAPS } from './map/map.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
@@ -98,6 +107,153 @@ function start() {
     setPref('model', choice);
     loadWeather(false);
   }, () => loadWeather(true));
+
+  // --- Account: profilo, barca attiva, barche (solo con login, SPEC §2.9) ---
+  const auth = initAuth(topbar, menu.addSection(it.auth.section));
+  const boatsRepo = createBoatsRepo(getClient);
+  const profileRepo = createProfileRepo(getClient);
+  /** @type {import('./data/profile-repo.js').Profile | null} */
+  let profile = null;
+  /** @type {import('./data/boats-repo.js').Boat[]} */
+  let boats = [];
+  const accountSec = menu.addSection(it.boats.section);
+  const accountHint = document.createElement('p');
+  accountHint.className = 'muted small';
+  const activeLine = document.createElement('p');
+  activeLine.className = 'small';
+  const accountBtns = document.createElement('div');
+  accountBtns.className = 'btn-row';
+  const boatsBtn = document.createElement('button');
+  boatsBtn.type = 'button';
+  boatsBtn.className = 'btn-secondary';
+  boatsBtn.textContent = it.boats.open;
+  const profileBtn = document.createElement('button');
+  profileBtn.type = 'button';
+  profileBtn.className = 'btn-secondary';
+  profileBtn.textContent = it.profile.open;
+  accountBtns.append(boatsBtn, profileBtn);
+  accountSec.append(accountHint, activeLine, accountBtns);
+
+  const activeBoat = () => boats.find((b) => b.id === profile?.default_boat_id) ?? null;
+  const renderAccount = () => {
+    const on = Boolean(auth.user());
+    accountBtns.classList.toggle('hidden', !on);
+    activeLine.classList.toggle('hidden', !on);
+    accountHint.classList.toggle('hidden', on);
+    accountHint.textContent = it.boats.needLogin;
+    const a = activeBoat();
+    activeLine.textContent = a ? `${it.boats.activeLabel}: ${a.name}` : it.boats.noActive;
+  };
+
+  /** Ricarica profilo e barche dopo login o modifiche; errori mostrati senza bloccare mappa e meteo. */
+  async function refreshAccount() {
+    if (!auth.user()) {
+      profile = null;
+      boats = [];
+      renderAccount();
+      return;
+    }
+    try {
+      [profile, boats] = await Promise.all([profileRepo.get(), boatsRepo.list()]);
+      // Preferenze salvate nel profilo: modello applicato all'accesso.
+      const pref = profile?.settings?.model;
+      if (pref && MODEL_CHOICES.includes(pref) && pref !== state.choice) {
+        state.choice = pref;
+        setPref('model', pref);
+        picker.setChoice(pref);
+        loadWeather(false);
+      }
+    } catch (err) {
+      console.warn(err);
+      recordError(err);
+      notice.show(errorMessage(err), 'error');
+    }
+    renderAccount();
+  }
+
+  const chartLabels = { kn: 'kn', full: it.chart.full, white: it.chart.white, tws: it.chart.tws };
+  /**
+   * Diagramma polare di una barca con i correttivi indicati (di default quelli del profilo).
+   * @param {import('./data/boats-repo.js').Boat} b
+   * @param {Record<string, any>} [prof]
+   */
+  const boatChart = (b, prof) => {
+    if (!b.polars.full) return null;
+    const c = correctionsFor(/** @type {any} */ ({ ...PROFILE_DEFAULTS, ...(prof ?? profile ?? {}) }), b);
+    if (![c.upwindEffPct, c.downwindEffPct, c.whiteDownwindPct, c.splitTwaDeg].every(Number.isFinite)) return null;
+    return polarChart({ full: b.polars.full.data, white: b.polars.white?.data ?? null }, c, { labels: chartLabels });
+  };
+
+  /** @param {string | null} boatId */
+  async function setActiveBoat(boatId) {
+    if (!profile) return;
+    const { value } = cleanProfile({ default_boat_id: boatId });
+    await profileRepo.update(profile.id, value);
+    profile.default_boat_id = boatId;
+    renderAccount();
+  }
+
+  boatsBtn.addEventListener('click', () => {
+    menu.close();
+    const panel = openBoatsPanel({
+      repo: boatsRepo,
+      onChanged: () => { refreshAccount(); },
+      preview: (b) => boatChart(b),
+      extraActions: (b) => {
+        if (b.id === profile?.default_boat_id) return Object.assign(document.createElement('span'), { className: 'badge badge-active', textContent: `★ ${it.boats.active}` });
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'btn-secondary';
+        x.textContent = it.boats.makeActive;
+        x.addEventListener('click', async () => {
+          x.disabled = true;
+          try {
+            await setActiveBoat(b.id);
+            panel.close();
+            boatsBtn.click();
+          } catch (err) {
+            x.disabled = false;
+            notice.show(errorMessage(err), 'error');
+          }
+        });
+        return x;
+      },
+    });
+  });
+
+  profileBtn.addEventListener('click', () => {
+    menu.close();
+    if (!profile) {
+      notice.show(it.profile.unavailable, 'error');
+      return;
+    }
+    openProfilePanel({
+      profile,
+      repo: profileRepo,
+      onSaved: (p) => { profile = p; renderAccount(); },
+      currentSettings: () => ({ model: state.choice, layers: wx.settings() }),
+      // Il diagramma della barca attiva si aggiorna a ogni modifica dei correttivi.
+      preview: (draft) => {
+        const b = activeBoat() ?? boats[0];
+        if (!b) return null;
+        const num = (k) => Number(String(draft[k]).replace(',', '.'));
+        const box = document.createElement('div');
+        box.className = 'profile-chart';
+        const chart = boatChart(b, {
+          upwind_eff_pct: num('upwind_eff_pct'),
+          downwind_eff_pct: num('downwind_eff_pct'),
+          white_downwind_pct: num('white_downwind_pct'),
+          split_twa_deg: num('split_twa_deg'),
+        });
+        if (!chart) return null;
+        box.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: `${it.chart.of} ${b.name}` }), chart);
+        return box;
+      },
+    });
+  });
+
+  auth.onChange(() => { refreshAccount(); });
+  renderAccount();
 
   const legend = createLegend(document.getElementById('map'));
   const waveNames = { wave: it.layers.waveTotal, wwave: it.layers.waveWind, swell: it.layers.waveSwell };
