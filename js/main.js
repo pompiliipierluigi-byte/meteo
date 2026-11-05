@@ -13,6 +13,8 @@ import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
 import { createRoutePoints } from './ui/route-points.js';
 import { createRoutePanel } from './ui/route-panel.js';
+import { createRoutesRepo } from './data/routes-repo.js';
+import { openRoutesPanel } from './ui/routes-panel.js';
 import { RoutingClient } from './routing/client.js';
 import { createRouteLayer } from './map/route-layer.js';
 import { initAuth } from './ui/auth.js';
@@ -346,6 +348,7 @@ function start() {
 
   // --- Rotta (fase 3) ---
   const routing = new RoutingClient();
+  const routesRepo = createRoutesRepo(getClient);
   const routePoints = createRoutePoints(mapCtl.map, L, {
     snap: (pts) => routing.snap(pts, 0.15),
     notify: (text, kind = 'info') => (text ? notice.show(text, kind) : notice.hide()),
@@ -370,6 +373,9 @@ function start() {
     },
     weatherEvents: weather,
     onLayout: () => mapCtl.map.invalidateSize({ pan: false }),
+    routesRepo,
+    openSaved: (onOpen) => openRoutesPanel({ repo: routesRepo, onOpen }),
+    setTime: (tMs) => slider.set(tMs),
   });
 
   const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null);

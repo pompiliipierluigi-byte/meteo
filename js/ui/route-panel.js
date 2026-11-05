@@ -24,14 +24,27 @@ import { windowChart, CHART_COLORS } from './window-chart.js';
  * @property {(fields: Record<string, number>) => Promise<void>} saveCorrections
  * @property {EventTarget} weatherEvents servizio meteo (eventi "progress")
  * @property {() => void} [onLayout] il pannello ha cambiato altezza (la mappa deve ricalcolare le dimensioni)
+ * @property {ReturnType<typeof import('../data/routes-repo.js').createRoutesRepo>} routesRepo
+ * @property {(onOpen: (r: import('../data/routes-repo.js').SavedRoute) => void) => void} openSaved elenco delle rotte salvate
+ * @property {(tMs: number) => void} [setTime] porta il cursore temporale a un istante
  */
+
+/**
+ * Informazioni mostrate sotto il riepilogo.
+ * @typedef {{boatName: string, sails: 'full' | 'white', runs: Record<string, number>, secs: number | null, savedAt?: string}} ResultInfo
+ */
+
+/**
+ * Rotta mostrata, pronta per il salvataggio.
+ * @typedef {{res: {track: any[], summary: any}, request: import('../routing/run.js').RouteRequest, model: any,
+ *   boatId: string | null, info: ResultInfo, fromWindow: boolean, savedId?: string}} Current
 
 /**
  * @param {HTMLElement} host contenitore (sopra la barra inferiore)
  * @param {HTMLElement} topbar
  * @param {import('./route-points.js').RoutePoints} points
  * @param {RouteDeps} deps
- * @returns {{root: HTMLElement, body: HTMLElement, open: () => void, close: () => void, isOpen: () => boolean, refresh: () => void, refreshOptions: () => void}}
+ * @returns {{root: HTMLElement, body: HTMLElement, open: () => void, close: () => void, isOpen: () => boolean, refresh: () => void, refreshOptions: () => void, showSaved: (r: import('../data/routes-repo.js').SavedRoute) => void}}
  */
 export function createRoutePanel(host, topbar, points, deps) {
   const t = it.routePanel;
@@ -49,7 +62,10 @@ export function createRoutePanel(host, topbar, points, deps) {
   const title = el('h2', '', t.title);
   const close = btn('✕', () => api.close(), 'icon-btn');
   close.setAttribute('aria-label', t.close);
-  head.append(title, close);
+  const savedBtn = btn(`📂 ${t.saved}`, () => deps.openSaved((r) => api.showSaved(r)), 'btn-small route-saved-btn');
+  const headBtns = el('div', 'route-sheet-tools');
+  headBtns.append(savedBtn, close);
+  head.append(title, headBtns);
   // Durante la scelta di un punto il pannello si abbassa e lascia libera la mappa.
   const pickBar = el('div', 'route-pickbar hidden');
   const pickText = el('span', '');
@@ -194,6 +210,8 @@ export function createRoutePanel(host, topbar, points, deps) {
   let running = false;
   /** @type {{cancel: () => void} | null} finestra di partenza in corso */
   let winJob = null;
+  /** @type {Current | null} */
+  let current = null;
   const msg = el('p', 'panel-msg');
 
   /** @param {string} text @param {'ok' | 'error'} kind */
@@ -300,6 +318,7 @@ export function createRoutePanel(host, topbar, points, deps) {
     renderRun();
     resultBox.replaceChildren();
     deps.layer.clear();
+    current = null;
   }
 
   /** @param {any} err */
@@ -325,7 +344,9 @@ export function createRoutePanel(host, topbar, points, deps) {
       deps.layer.show(res);
       deps.layer.setTime(deps.context().tMs);
       deps.layer.fit();
-      renderResult(res, { boat, sails, weather, secs });
+      const info = { boatName: boat.name, sails, runs: weather.wind.runs ?? {}, secs };
+      current = { res, request, model: c.choice, boatId: boat.id, info, fromWindow: false };
+      renderResult(res, info);
       bar.classList.add('hidden');
     } catch (err) {
       failed(err);
@@ -339,8 +360,9 @@ export function createRoutePanel(host, topbar, points, deps) {
   /**
    * Stato dell'ultima finestra calcolata.
    * @type {{departures: number[], runs: (import('../routing/departure-window.js').WindowRun | undefined)[],
-   *   selected: number | null, info: {boat: any, sails: string, weather: any, secs: number},
-   *   limits: import('../routing/run.js').RouteRequest['limits'], waveWarningM: number} | null}
+   *   selected: number | null, info: ResultInfo, request: import('../routing/run.js').RouteRequest | null,
+   *   model: any, boatId: string | null, limits: import('../routing/run.js').RouteRequest['limits'], waveWarningM: number,
+   *   saved?: boolean} | null}
    */
   let win = null;
 
@@ -351,11 +373,14 @@ export function createRoutePanel(host, topbar, points, deps) {
     begin('window');
     const departures = departureTimes(Math.max(c.tMs, Date.now()));
     const request = buildRequest(c, boat, route, departures[0]);
-    win = { departures, runs: new Array(departures.length), selected: null, info: { boat, sails, weather: null, secs: 0 }, limits: request.limits, waveWarningM: request.waveWarningM };
+    win = {
+      departures, runs: new Array(departures.length), selected: null, info: { boatName: boat.name, sails, runs: {}, secs: null },
+      request, model: c.choice, boatId: boat.id, limits: request.limits, waveWarningM: request.waveWarningM,
+    };
     renderWindow();
     try {
       const weather = await corridorWeather(c, route, departures[departures.length - 1]);
-      win.info.weather = weather;
+      win.info.runs = weather.wind.runs ?? {};
       const t0 = performance.now();
       setBar(0.5, fill(t.windowProgress, { n: 0, total: departures.length }));
       const job = runDepartureWindow({
@@ -371,7 +396,7 @@ export function createRoutePanel(host, topbar, points, deps) {
       });
       winJob = job;
       await job.done;
-      win.info.secs = (performance.now() - t0) / 1000;
+      win.info = { ...win.info, secs: (performance.now() - t0) / 1000 };
       bar.classList.add('hidden');
       renderWindow();
     } catch (err) {
@@ -395,15 +420,26 @@ export function createRoutePanel(host, topbar, points, deps) {
     renderWindow();
     resultBox.replaceChildren();
     deps.layer.clear();
+    current = null;
     if (run.error) {
       resultBox.append(el('p', 'panel-msg', run.error.message));
+      return;
+    }
+    if (!run.track) {
+      // Finestra riaperta: solo i riepiloghi sono salvati (SPEC §4.4).
+      renderResult({ track: [], summary: run.summary }, { ...win.info, secs: null });
+      resultBox.append(el('p', 'field-hint', t.noTrackSaved));
       return;
     }
     const res = { track: /** @type {any} */ (run.track), summary: run.summary };
     deps.layer.show(res);
     deps.layer.setTime(deps.context().tMs);
     deps.layer.fit();
-    renderResult(res, win.info);
+    if (win.request) {
+      current = { res, request: { ...win.request, departMs: run.departMs }, model: win.model, boatId: win.boatId, info: { ...win.info, secs: null }, fromWindow: true };
+    }
+    // Tempo di calcolo: è quello dell'intera finestra, mostrato sotto il grafico.
+    renderResult(res, { ...win.info, secs: null });
   }
 
   function renderWindow() {
@@ -461,12 +497,13 @@ export function createRoutePanel(host, topbar, points, deps) {
       if (nf) windowBox.append(el('small', 'muted', fill(t.windowNotFoundCount, { n: nf })));
     }
     if (win.info.secs) windowBox.append(el('small', 'muted', fill(t.windowMeta, { secs: win.info.secs.toFixed(0) })));
+    else if (win.saved) windowBox.append(el('small', 'muted', t.windowSavedHint));
   }
 
   // --- Risultato ------------------------------------------------------------------
   /**
    * @param {{track: import('../routing/isochrone.js').TrackPoint[], summary: any}} res
-   * @param {{boat: any, sails: string, weather: any, secs: number}} info
+   * @param {ResultInfo} info
    */
   function renderResult(res, info) {
     const s = res.summary;
@@ -483,13 +520,16 @@ export function createRoutePanel(host, topbar, points, deps) {
     item(t.sum.maxGust, `${fmtNum(s.max_gust_kn, 1)} kn`);
     item(t.sum.maxWave, s.max_wave_m > 0 ? `${fmtNum(s.max_wave_m, 1)} m` : it.probe.noData);
     resultBox.append(grid);
-    const runs = Object.entries(info.weather.wind.runs ?? {}).map(([m, r]) => `${modelLabel(/** @type {any} */ (m))} ${formatShortDateTime(r)}`).join(', ');
-    resultBox.append(el('small', 'muted', fill(t.sum.meta, { boat: info.boat.name, sails: t.sailNames[info.sails], runs, secs: info.secs.toFixed(1) })));
+    const runs = Object.entries(info.runs ?? {}).map(([m, r]) => `${modelLabel(/** @type {any} */ (m))} ${formatShortDateTime(r)}`).join(', ');
+    const meta = { boat: info.boatName, sails: t.sailNames[info.sails] ?? info.sails, runs, secs: info.secs?.toFixed(1) ?? '' };
+    resultBox.append(el('small', 'muted', fill(info.savedAt ? t.sum.metaSaved : info.secs !== null ? t.sum.meta : t.sum.metaNoTime, { ...meta, date: info.savedAt ?? '' })));
+    resultBox.append(saveBox());
     if (s.warnings.length) {
       const ul = el('ul', 'route-warnings');
       for (const w of s.warnings) ul.append(el('li', '', t.warnings[w] ?? w));
       resultBox.append(ul);
     }
+    if (!res.track.length) return;
     // Tabella dei passi.
     const table = document.createElement('table');
     table.className = 'route-table';
@@ -516,6 +556,103 @@ export function createRoutePanel(host, topbar, points, deps) {
     const wrap = el('div', 'route-table-wrap');
     wrap.append(table);
     resultBox.append(wrap, el('small', 'field-hint', t.tableHint));
+  }
+
+  /** Salvataggio della rotta mostrata (nome modificabile). */
+  function saveBox() {
+    const box = el('div', 'route-save');
+    const cur = current;
+    if (!cur) return box;
+    if (cur.savedId) {
+      box.append(el('p', 'small', `✓ ${t.savedOk}`));
+      return box;
+    }
+    if (!deps.context().user) return box;
+    const pts = cur.request.route;
+    const def = fill(t.defaultName, {
+      from: formatLatLon(pts[0].lat, pts[0].lon).split(' ')[0],
+      to: formatLatLon(pts[pts.length - 1].lat, pts[pts.length - 1].lon).split(' ')[0],
+      date: formatShortDateTime(cur.res.summary.departure_ms),
+    });
+    const name = input('route-name', def, { maxLength: 100 });
+    const m = el('small', 'panel-msg');
+    const save = btn(t.save, async () => {
+      save.disabled = true;
+      try {
+        cur.savedId = await deps.routesRepo.save({
+          name: name.value,
+          boatId: cur.boatId,
+          boatName: cur.info.boatName,
+          route: cur.request.route,
+          model: cur.model,
+          runs: cur.info.runs,
+          request: cur.request,
+          track: cur.res.track,
+          summary: cur.res.summary,
+          window: cur.fromWindow && win ? { departures: win.departures, runs: win.runs, selected: win.selected, limits: win.limits, waveWarningM: win.waveWarningM } : null,
+        });
+        box.replaceChildren(el('p', 'small', `✓ ${t.savedOk}`));
+      } catch (err) {
+        save.disabled = false;
+        m.textContent = err?.errors ? err.errors.join(' · ') : errorMessage(err);
+        m.dataset.kind = 'error';
+      }
+    }, 'btn-primary');
+    const row = el('div', 'route-save-row');
+    row.append(name, save);
+    box.append(field(t.saveName, /** @type {any} */ (row)), m);
+    if (cur.fromWindow) box.append(el('small', 'field-hint', t.saveWithWindow));
+    return box;
+  }
+
+  /**
+   * Riapre una rotta salvata: punti, traccia e riepilogo come al salvataggio, finestra se presente.
+   * @param {import('../data/routes-repo.js').SavedRoute} r
+   */
+  function showSaved(r) {
+    if (running) cancel();
+    points.set(r.route);
+    deps.layer.clear();
+    resultBox.replaceChildren();
+    windowBox.replaceChildren();
+    showMsg('', 'ok');
+    const info = {
+      boatName: r.params.boatName ?? '—',
+      sails: r.polar_kind,
+      runs: r.params.runs ?? {},
+      secs: null,
+      savedAt: formatShortDateTime(Date.parse(r.created_at)),
+    };
+    const res = { track: r.track, summary: r.summary };
+    current = { res, request: /** @type {any} */ ({ ...r.params, route: r.route, departMs: r.departMs }), model: r.model, boatId: r.boat_id, info, fromWindow: false, savedId: r.id };
+    win = null;
+    if (r.window?.departures?.length) {
+      win = {
+        departures: r.window.departures,
+        runs: r.window.departures.map((d, i) => {
+          const w = r.window?.runs[i];
+          if (!w) return undefined;
+          // La partenza salvata ha anche la traccia.
+          if (i === r.window?.selected && w.summary) return { departMs: d, summary: r.summary, track: r.track };
+          return w.error ? { departMs: d, error: w.error } : { departMs: d, summary: w.summary };
+        }),
+        selected: r.window.selected,
+        info,
+        request: null,
+        model: r.model,
+        boatId: r.boat_id,
+        limits: r.window.limits,
+        waveWarningM: r.window.waveWarningM,
+        saved: true,
+      };
+      renderWindow();
+    }
+    api.open();
+    deps.setTime?.(r.departMs);
+    deps.layer.show(res);
+    deps.layer.setTime(deps.context().tMs);
+    deps.layer.fit();
+    renderResult(res, info);
   }
 
   renderOptions();
@@ -546,7 +683,9 @@ export function createRoutePanel(host, topbar, points, deps) {
     refreshOptions() {
       renderOptions();
       renderRun();
+      savedBtn.classList.toggle('hidden', !deps.context().user);
     },
+    showSaved,
   };
   toggle.addEventListener('click', () => (api.isOpen() ? api.close() : api.open()));
   return api;

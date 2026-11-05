@@ -18,6 +18,7 @@ import { BBOX } from '../config.js';
  * @property {(i: number, delta: number) => void} moveWaypoint
  * @property {(i: number) => void} removeWaypoint
  * @property {() => void} clear
+ * @property {(route: LatLon[]) => void} set partenza, waypoint…, arrivo (rotta salvata riaperta)
  * @property {(fn: () => void) => void} onChange
  */
 
@@ -161,6 +162,13 @@ export function createRoutePoints(map, L, deps) {
       start = null;
       end = null;
       waypoints = [];
+      changed();
+    },
+    set(route) {
+      if (route.length < 2) return;
+      start = { lat: route[0].lat, lon: route[0].lon };
+      end = { lat: route[route.length - 1].lat, lon: route[route.length - 1].lon };
+      waypoints = route.slice(1, -1).map((p) => ({ lat: p.lat, lon: p.lon }));
       changed();
     },
     onChange: (fn) => { listeners.push(fn); },

@@ -109,6 +109,13 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Le partenze oltre i limiti impostati sono segnate come "fuori limite".
 - Tocco su una colonna del grafico → mostra quella rotta su mappa.
 - Run eseguiti nel worker in sequenza (o in un pool di 2 worker se `navigator.hardwareConcurrency ≥ 4`), con avanzamento "n/24".
+- Salvando la rotta di una partenza scelta dalla finestra si salvano anche i riepiloghi delle 24 partenze (senza tracce): riaprendola il grafico torna visibile, la traccia solo per la partenza salvata.
+
+### 2.7.1 Rotte salvate
+
+- "Salva" sotto il riepilogo di una rotta calcolata (nome proposto: partenza → arrivo e data, modificabile).
+- Elenco "📂 Salvate" nel pannello rotta: apri (punti, traccia, riepilogo e tabella come al salvataggio, cursore all'ora di partenza) ed elimina.
+- La rotta salvata contiene la copia di polari, correttivi e parametri: si riapre identica anche se la barca cambia o viene eliminata.
 
 ### 2.8 Avviso di sicurezza
 
