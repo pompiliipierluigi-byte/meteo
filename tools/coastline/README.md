@@ -42,6 +42,10 @@ python3 tools/coastline/make-tiles.py land.geojson data/coastline 20
 
 Obiettivo: tassello medio < 500 KB compresso (SPEC §7.2).
 
+## Note
+
+- Laguna di Venezia e lagune chiuse dai lidi: in OSM sono acqua interna, quindi "terra" per il routing.
+
 ## Fonti scartate
 
 - `@geo-maps/earth-lands-10m` (npm): troppo semplificata per i canali tra le isole (segmento mediano ~600 m,
