@@ -1,0 +1,67 @@
+# Preparazione della linea di costa (SPEC §7.2): scarica i land polygons OpenStreetMap, ritaglia sull'area
+# dell'app, unisce, semplifica (~20 m) e divide in tasselli 1°×1° in data/coastline/, poi li salva sul ramo.
+# Non fa parte dell'app: si avvia a mano (Actions → Linea di costa → Run workflow) o con un push che
+# modifica gli strumenti in tools/coastline/.
+name: Linea di costa
+
+on:
+  workflow_dispatch:
+    inputs:
+      tolerance_m:
+        description: Tolleranza di semplificazione (m)
+        default: '20'
+  push:
+    paths:
+      - tools/coastline/**
+      - .github/workflows/coastline.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coastline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strumenti (GDAL, shapely)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gdal-bin unzip
+          python3 -m pip install --quiet 'shapely>=2,<3'
+
+      - name: Land polygons OpenStreetMap (split, WGS84)
+        run: |
+          curl -fsSL -o land.zip https://osmdata.openstreetmap.de/download/land-polygons-split-4326.zip
+          unzip -q land.zip
+          ls -la land-polygons-split-4326
+
+      - name: Ritaglio sull'area (BBOX + 0.2°)
+        run: |
+          ogr2ogr -f GeoJSON -spat 11.8 39.6 19.9 46.0 -clipsrc 11.8 39.6 19.9 46.0 \
+            -lco COORDINATE_PRECISION=7 land.geojson land-polygons-split-4326/land_polygons.shp
+          ls -la land.geojson
+
+      - name: Tasselli
+        run: |
+          rm -f data/coastline/*.geojson
+          python3 tools/coastline/make-tiles.py land.geojson data/coastline "${{ github.event.inputs.tolerance_m || '20' }}"
+          du -sh data/coastline
+          for f in data/coastline/*.geojson; do printf '%8d %8d %s\n' "$(wc -c < "$f")" "$(gzip -c "$f" | wc -c)" "$f"; done | sort -n | tail -8
+
+      - name: Salvataggio sul ramo
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/coastline
+          if git diff --cached --quiet; then
+            echo 'Nessuna modifica ai tasselli'
+            exit 0
+          fi
+          git commit -m "Fase 3.1: tasselli linea di costa OSM (generati da .github/workflows/coastline.yml)"
+          git push
