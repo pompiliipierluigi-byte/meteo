@@ -42,12 +42,13 @@ export function createLandIndex(opts = {}) {
   // Segmenti di costa (esclusi i lati artificiali sul bordo dei tasselli): x1, y1, x2, y2 (lon, lat).
   /** @type {number[]} */
   let coast = [];
-  /** @type {Map<string, number[]>} cella → indici dei segmenti di costa */
+  /** @type {Map<number, number[]>} cella → indici dei segmenti di costa */
   const cells = new Map();
-  /** @type {Map<string, boolean>} stato delle celle senza costa: true = terra */
+  /** @type {Map<number, boolean>} stato delle celle senza costa: true = terra */
   const cellState = new Map();
 
-  const cellKey = (ix, iy) => `${ix},${iy}`;
+  // Chiave numerica della cella (più veloce delle stringhe nel ciclo del routing).
+  const cellKey = (ix, iy) => (ix + 100000) * 200003 + (iy + 100000);
   const ixOf = (lon) => Math.floor(lon / cellDeg);
   const iyOf = (lat) => Math.floor(lat / cellDeg);
   const tileKey = (lat, lon) => `${Math.floor(lat)}_${Math.floor(lon)}`;
@@ -105,7 +106,7 @@ export function createLandIndex(opts = {}) {
 
   /**
    * Celle toccate da un segmento (rettangolo delle celle, sufficiente per segmenti corti).
-   * @returns {string[]}
+   * @returns {number[]}
    */
   function cellsAlong(x1, y1, x2, y2) {
     const keys = [];
@@ -162,18 +163,25 @@ export function createLandIndex(opts = {}) {
   /**
    * Il segmento tocca terra? Estremi a terra, oppure attraversa un segmento di costa.
    * @param {number} lat1 @param {number} lon1 @param {number} lat2 @param {number} lon2
+   * @param {boolean} [startInSea] il primo estremo è già noto in mare (si salta il suo test)
    * @returns {boolean}
    */
-  function segmentHitsLand(lat1, lon1, lat2, lon2) {
-    if (isLand(lat1, lon1) || isLand(lat2, lon2)) return true;
-    const seen = new Set();
-    for (const key of cellsAlong(lon1, lat1, lon2, lat2)) {
-      const list = cells.get(key);
-      if (!list) continue;
-      for (const k of list) {
-        if (seen.has(k)) continue;
-        seen.add(k);
-        if (segmentsIntersect(lon1, lat1, lon2, lat2, coast[k], coast[k + 1], coast[k + 2], coast[k + 3])) return true;
+  function segmentHitsLand(lat1, lon1, lat2, lon2, startInSea = false) {
+    // Partendo dal mare, senza attraversare la costa si arriva in mare: il test dell'arrivo non serve.
+    // (I lati artificiali dei tasselli separano solo terra da terra.)
+    if (!startInSea && (isLand(lat1, lon1) || isLand(lat2, lon2))) return true;
+    // Un segmento può comparire in più celle: ripeterne il test è innocuo e costa meno di un Set.
+    const ix0 = ixOf(Math.min(lon1, lon2));
+    const ix1 = ixOf(Math.max(lon1, lon2));
+    const iy0 = iyOf(Math.min(lat1, lat2));
+    const iy1 = iyOf(Math.max(lat1, lat2));
+    for (let ix = ix0; ix <= ix1; ix++) {
+      for (let iy = iy0; iy <= iy1; iy++) {
+        const list = cells.get(cellKey(ix, iy));
+        if (!list) continue;
+        for (const k of list) {
+          if (segmentsIntersect(lon1, lat1, lon2, lat2, coast[k], coast[k + 1], coast[k + 2], coast[k + 3])) return true;
+        }
       }
     }
     return false;
@@ -200,14 +208,11 @@ export function createLandIndex(opts = {}) {
     const dLat = maxNm / ky;
     const dLon = maxNm / Math.max(kx, 1e-6);
     let best = null;
-    const seen = new Set();
     for (let ix = ixOf(lon - dLon); ix <= ixOf(lon + dLon); ix++) {
       for (let iy = iyOf(lat - dLat); iy <= iyOf(lat + dLat); iy++) {
         const list = cells.get(cellKey(ix, iy));
         if (!list) continue;
         for (const k of list) {
-          if (seen.has(k)) continue;
-          seen.add(k);
           // Proiezione locale centrata nel punto: x = Δlon·kx, y = Δlat·ky.
           const ax = (coast[k] - lon) * kx;
           const ay = (coast[k + 1] - lat) * ky;

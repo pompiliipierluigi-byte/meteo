@@ -73,7 +73,7 @@ export function createRoutePoints(map, L, deps) {
   /**
    * Punto valido: dentro l'area e in mare (altrimenti spostato, con avviso).
    * @param {LatLon} p
-   * @returns {Promise<LatLon | null>}
+   * @returns {Promise<(LatLon & {moved?: boolean}) | null>}
    */
   async function toSea(p) {
     if (p.lat < BBOX.latMin || p.lat > BBOX.latMax || p.lon < BBOX.lonMin || p.lon > BBOX.lonMax) {
@@ -87,7 +87,7 @@ export function createRoutePoints(map, L, deps) {
         return null;
       }
       if (s.moved) deps.notify(`${t.moved} (${s.distNm.toFixed(2)} NM)`, 'warn');
-      return { lat: s.lat, lon: s.lon };
+      return { lat: s.lat, lon: s.lon, moved: s.moved };
     } catch (err) {
       // Costa non disponibile: si accetta il punto così com'è.
       console.warn('Controllo terra non disponibile:', err);
@@ -110,9 +110,11 @@ export function createRoutePoints(map, L, deps) {
       changed();
       return;
     }
-    if (role === 'start') start = p;
-    else if (role === 'end') end = p;
-    else waypoints.push(p);
+    const q = { lat: p.lat, lon: p.lon };
+    if (role === 'start') start = q;
+    else if (role === 'end') end = q;
+    else waypoints.push(q);
+    if (!p.moved) deps.notify('');
     changed();
   });
 

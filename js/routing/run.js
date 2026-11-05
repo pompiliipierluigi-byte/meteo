@@ -34,6 +34,32 @@ export function maxSpeed(speed, tws) {
 }
 
 /**
+ * Tabella precalcolata della velocità a vela (TWA ogni 1°, TWS ogni 0.5 kn fino a 60 kn), interpolata
+ * bilinearmente: il routing la interroga milioni di volte.
+ * @param {(twa: number, tws: number) => number} speed
+ * @returns {(twaDeg: number, twsKn: number) => number}
+ */
+export function speedTable(speed) {
+  const dTws = 0.5;
+  const nTws = 121;
+  const nTwa = 181;
+  const tab = new Float32Array(nTws * nTwa);
+  for (let j = 0; j < nTws; j++) for (let a = 0; a < nTwa; a++) tab[j * nTwa + a] = speed(a, j * dTws);
+  return (twaDeg, twsKn) => {
+    let a = ((twaDeg % 360) + 360) % 360;
+    if (a > 180) a = 360 - a;
+    const w = Math.min(Math.max(twsKn, 0), (nTws - 1) * dTws) / dTws;
+    const a0 = Math.min(Math.floor(a), nTwa - 2);
+    const j0 = Math.min(Math.floor(w), nTws - 2);
+    const ta = a - a0;
+    const tw = w - j0;
+    const r0 = j0 * nTwa + a0;
+    const r1 = r0 + nTwa;
+    return (tab[r0] * (1 - ta) + tab[r0 + 1] * ta) * (1 - tw) + (tab[r1] * (1 - ta) + tab[r1 + 1] * ta) * tw;
+  };
+}
+
+/**
  * Esegue il calcolo.
  * @param {RouteRequest} req
  * @param {{wind: import('../weather/grid.js').WeatherField, marine?: import('../weather/grid.js').WeatherField | null}} weather
@@ -41,12 +67,13 @@ export function maxSpeed(speed, tws) {
  * @param {{onProgress?: (f: number) => void, isCancelled?: () => boolean}} [hooks]
  */
 export function runRoute(req, weather, land, hooks = {}) {
-  const speed = (twa, tws) => sailSpeed(req.polars, req.sails, twa, tws, req.corrections);
+  const exact = (twa, tws) => sailSpeed(req.polars, req.sails, twa, tws, req.corrections);
+  const speed = speedTable(exact);
   return computeRoute({
     route: req.route,
     departMs: req.departMs,
     sailSpeed: speed,
-    maxSailKn: Math.max(maxSpeed(speed, req.polars.full.tws), req.motor.speedKn),
+    maxSailKn: Math.max(maxSpeed(exact, req.polars.full.tws), req.motor.speedKn),
     sampler: createSampler(weather),
     land,
     motor: req.motor,

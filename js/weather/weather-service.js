@@ -9,6 +9,10 @@ import {
   WIND_VARS, WAVE_VARS, WAVE_FIELD_VARS, CURRENT_VARS, ROUTE_MARINE_VARS,
 } from './openmeteo.js';
 import { corridorGrid } from './corridor.js';
+import { distanceNm } from '../routing/geo.js';
+
+/** Ore sicuramente coperte da ICON-2I a partire da adesso (72 h dal run, meno il ritardo di pubblicazione). */
+const ICON_SAFE_HORIZON_H = 54;
 
 /**
  * Sorgenti di dati: modelli di vento, onda della mappa, correnti della mappa, marino del corridoio.
@@ -221,12 +225,22 @@ export class WeatherService extends EventTarget {
    * Meteo fine del corridoio di una rotta: vento del modello scelto (Auto = fusione) e onda + corrente.
    * @param {import('./models.js').ModelChoice} choice
    * @param {{lat: number, lon: number}[]} route partenza, waypoint, arrivo
-   * @param {{stepDeg?: number, marginNm?: number}} [opts]
+   * @param {{stepDeg?: number, marginNm?: number, departMs?: number}} [opts]
    * @returns {Promise<{wind: import('./models.js').WindData & {runs: Record<string, number>}, marine: import('./grid.js').WeatherField | null, grid: import('./grid.js').GridSpec, points: number}>}
    */
   async getCorridor(choice, route, opts = {}) {
-    const area = corridorGrid(route, opts);
-    const ids = sourcesFor(choice);
+    const marginNm = opts.marginNm ?? 12;
+    const area = corridorGrid(route, { stepDeg: opts.stepDeg ?? 0.1, marginNm });
+    // Onda e correnti: il modello marino ha ~8 km di risoluzione, basta una griglia più larga.
+    const marineArea = corridorGrid(route, { stepDeg: 0.2, marginNm });
+    let ids = sourcesFor(choice);
+    // Auto: se la traversata stimata finisce entro l'orizzonte di ICON-2I, ECMWF non serve (quota).
+    if (choice === 'auto') {
+      let dist = 0;
+      for (let i = 0; i + 1 < route.length; i++) dist += distanceNm(route[i].lat, route[i].lon, route[i + 1].lat, route[i + 1].lon);
+      const estEndMs = (opts.departMs ?? Date.now()) + ((1.6 * dist) / 4 + 3) * 3600e3;
+      if (estEndMs <= Date.now() + ICON_SAFE_HORIZON_H * 3600e3) ids = ['icon2i'];
+    }
     /** @type {Record<string, Loaded>} */
     const loaded = {};
     for (const id of ids) {
@@ -238,12 +252,16 @@ export class WeatherService extends EventTarget {
       }
     }
     const asField = (/** @type {Loaded} */ l) => ({ grid: l.entry.grid, timesMs: l.entry.timesMs, vars: l.entry.vars });
+    if (choice === 'auto' && !loaded.icon2i && !loaded.ecmwf) {
+      // ICON-2I non disponibile e ECMWF non scaricato: si ripiega su ECMWF.
+      loaded.ecmwf = await this.load('ecmwf', {}, area);
+    }
     const wind = choice === 'auto'
-      ? fuseAuto(loaded.icon2i ? asField(loaded.icon2i) : null, asField(loaded.ecmwf))
+      ? (loaded.ecmwf ? fuseAuto(loaded.icon2i ? asField(loaded.icon2i) : null, asField(loaded.ecmwf)) : singleModel('icon2i', asField(loaded.icon2i)))
       : singleModel(choice, asField(loaded[choice]));
     let marine = null;
     try {
-      marine = asField(await this.load('route-marine', {}, area));
+      marine = asField(await this.load('route-marine', {}, marineArea));
     } catch (err) {
       // Senza onda e correnti il routing funziona lo stesso (velocità senza deriva, nessun avviso onda).
       console.warn('Onda/correnti del corridoio non disponibili:', err);

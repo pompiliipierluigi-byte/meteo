@@ -66,6 +66,7 @@ const SHELL = [
   './js/routing/client.js',
   './js/weather/corridor.js',
   './js/map/current-layer.js',
+  './js/map/route-layer.js',
   './js/ui/auth.js',
   './js/ui/panel.js',
   './js/ui/polar-table.js',

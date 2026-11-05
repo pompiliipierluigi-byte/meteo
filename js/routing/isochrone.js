@@ -124,7 +124,7 @@ function computeLeg(p, from, to, t0, tLimit, progress) {
 
   // Proiezione locale per le celle di potatura.
   const kx = Math.cos((from.lat * Math.PI) / 180) * 60;
-  const cellOf = (lat, lon) => `${Math.round(((lon - from.lon) * kx) / cellNm)},${Math.round(((lat - from.lat) * 60) / cellNm)}`;
+  const cellOf = (lat, lon) => (Math.round(((lon - from.lon) * kx) / cellNm) + 100000) * 200003 + Math.round(((lat - from.lat) * 60) / cellNm) + 100000;
   const blocked = new Set([cellOf(from.lat, from.lon)]);
 
   /** @type {Node} */
@@ -138,23 +138,21 @@ function computeLeg(p, from, to, t0, tLimit, progress) {
   while (front.length) {
     if (p.isCancelled?.()) throw new RouteError('Calcolo annullato', 'cancelled');
     const t = front[0].t;
-    if (t - t0 > 0) {
-      const remaining = Math.min(...front.map((n) => distanceNm(n.lat, n.lon, to.lat, to.lon)));
-      progress(Math.max(0, Math.min(0.99, 1 - remaining / Math.max(total, 1e-6))));
-    }
+    const remaining = t - t0 > 0 ? Math.min(...front.map((n) => n.dGoal ?? total)) : total;
+    if (t - t0 > 0) progress(Math.max(0, Math.min(0.99, 1 - remaining / Math.max(total, 1e-6))));
     if (t > tLimit) break;
-    const fine = t - t0 < 2 * 3600e3 || front.some((n) => distanceNm(n.lat, n.lon, to.lat, to.lon) < p.maxSailKn * (dtMs / 3600e3) * 2);
+    const fine = t - t0 < 2 * 3600e3 || remaining < p.maxSailKn * (dtMs / 3600e3) * 2;
     const dt = fine ? dtFineMs : dtMs;
     const dtH = dt / 3600e3;
-    /** @type {Map<string, Node>} */
+    /** @type {Map<number, Node & {dGoal: number}>} */
     const next = new Map();
 
     for (const n of front) {
       const c = p.sampler(n.lat, n.lon, n.t);
       if (!c) continue;
       const goalBrg = bearingDeg(n.lat, n.lon, to.lat, to.lon);
-      const distGoal = distanceNm(n.lat, n.lon, to.lat, to.lon);
-      const distLand = land ? land.distanceToCoastNm(n.lat, n.lon, Math.max(p.motor.nearLandNm, 1)) : Infinity;
+      const distGoal = n.dGoal ?? distanceNm(n.lat, n.lon, to.lat, to.lon);
+      const distLand = land && p.motor.nearLand ? land.distanceToCoastNm(n.lat, n.lon, p.motor.nearLandNm) : Infinity;
       // Regola motore decisa per punto (SPEC §5.2), o motore forzato vicino a terra.
       const best0 = bestSailing((twa) => p.sailSpeed(twa, c.twsKn), c.twdDeg, goalBrg, step);
       const motor = (p.motor.nearLand && distLand < p.motor.nearLandNm) || useMotor(best0, p.motor);
@@ -199,7 +197,7 @@ function computeLeg(p, from, to, t0, tLimit, progress) {
         const key = cellOf(q.lat, q.lon);
         if (blocked.has(key)) continue;
         if (land) {
-          if (land.segmentHitsLand(n.lat, n.lon, q.lat, q.lon)) continue;
+          if (land.segmentHitsLand(n.lat, n.lon, q.lat, q.lon, true)) continue;
           // Margine dalla costa, non applicato vicino a partenza e arrivo (porti, ridossi).
           if (margin > 0 && distanceNm(q.lat, q.lon, from.lat, from.lon) > 2 * margin + 0.5
             && distanceNm(q.lat, q.lon, to.lat, to.lon) > 2 * margin + 0.5
@@ -211,10 +209,10 @@ function computeLeg(p, from, to, t0, tLimit, progress) {
             || (limits.gustKn !== null && cq.gustKn > limits.gustKn)
             || (limits.waveM !== null && cq.waveHeightM > limits.waveM))) continue;
         }
-        const node = { lat: q.lat, lon: q.lon, t: n.t + dt, parent: n, heading: h, bsp, sog, cog, motor, cond: c };
+        const dGoal = distanceNm(q.lat, q.lon, to.lat, to.lon);
         const prev = next.get(key);
         // A parità di tempo, nella stessa cella si tiene il punto più vicino alla meta.
-        if (!prev || distanceNm(q.lat, q.lon, to.lat, to.lon) < distanceNm(prev.lat, prev.lon, to.lat, to.lon)) next.set(key, node);
+        if (!prev || dGoal < prev.dGoal) next.set(key, { lat: q.lat, lon: q.lon, t: n.t + dt, parent: n, heading: h, bsp, sog, cog, motor, cond: c, dGoal });
       }
     }
 
@@ -224,7 +222,7 @@ function computeLeg(p, from, to, t0, tLimit, progress) {
     for (const k of next.keys()) blocked.add(k);
     if (list.length > maxPoints) {
       // Euristica tipo A*: tempo trascorso + distanza residua / velocità massima (tempo uguale per tutti).
-      list.sort((a, b) => distanceNm(a.lat, a.lon, to.lat, to.lon) - distanceNm(b.lat, b.lon, to.lat, to.lon));
+      list.sort((a, b) => a.dGoal - b.dGoal);
       list = list.slice(0, maxPoints);
     }
     if (p.keepIsochrones) isos.push(list.map((n) => [n.lat, n.lon]));

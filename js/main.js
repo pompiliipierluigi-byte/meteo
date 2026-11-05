@@ -14,6 +14,7 @@ import { initProbe } from './ui/probe.js';
 import { createRoutePoints } from './ui/route-points.js';
 import { createRoutePanel } from './ui/route-panel.js';
 import { RoutingClient } from './routing/client.js';
+import { createRouteLayer } from './map/route-layer.js';
 import { initAuth } from './ui/auth.js';
 import { getClient } from './data/supabase.js';
 import { createBoatsRepo } from './data/boats-repo.js';
@@ -50,6 +51,9 @@ function registerServiceWorker() {
  *   waves: import('./weather/weather-service.js').WaveResult | null,
  * }}
  */
+/** @type {ReturnType<typeof createRoutePanel> | null} */
+let routePanelRef = null;
+
 const state = {
   choice: 'auto',
   tMs: Math.floor(Date.now() / 3600e3) * 3600e3,
@@ -139,6 +143,8 @@ function start() {
 
   const activeBoat = () => boats.find((b) => b.id === profile?.default_boat_id) ?? null;
   const renderAccount = () => {
+    // Il pannello rotta (creato dopo) segue account, barche e profilo.
+    setTimeout(() => routePanelRef?.refreshOptions(), 0);
     const on = Boolean(auth.user());
     accountBtns.classList.toggle('hidden', !on);
     activeLine.classList.toggle('hidden', !on);
@@ -338,9 +344,29 @@ function start() {
   const routing = new RoutingClient();
   const routePoints = createRoutePoints(mapCtl.map, L, {
     snap: (pts) => routing.snap(pts, 0.15),
-    notify: (text, kind = 'info') => notice.show(text, kind),
+    notify: (text, kind = 'info') => (text ? notice.show(text, kind) : notice.hide()),
   });
-  const routePanel = createRoutePanel(bottombar, topbar, routePoints);
+  const routeLayer = createRouteLayer(mapCtl.map, L);
+  const routePanel = routePanelRef = createRoutePanel(bottombar, topbar, routePoints, {
+    context: () => ({
+      user: auth.user(),
+      profile,
+      boats,
+      activeBoatId: profile?.default_boat_id ?? null,
+      choice: state.choice,
+      tMs: state.tMs,
+    }),
+    getCorridor: (choice, route, departMs) => weather.getCorridor(choice, route, { departMs }),
+    routing,
+    layer: routeLayer,
+    saveCorrections: async (fields) => {
+      if (!profile) throw new Error(it.profile.unavailable);
+      await profileRepo.update(profile.id, fields);
+      Object.assign(profile, fields);
+    },
+    weatherEvents: weather,
+    onLayout: () => mapCtl.map.invalidateSize({ pan: false }),
+  });
 
   const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null);
 
@@ -349,6 +375,8 @@ function start() {
     updateStatus();
     wx.setTime(tMs);
     probe.refresh();
+    routeLayer.setTime(tMs);
+    routePanel.refresh();
     document.dispatchEvent(new CustomEvent('time-changed'));
   });
   state.tMs = slider.get();
