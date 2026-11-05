@@ -4,7 +4,7 @@ Istruzioni per chi sviluppa in questo repository (persone e agenti). Requisiti i
 
 ## Progetto
 
-PWA di weather routing per barca a vela in Adriatico (lat 39.8–45.8, lon 12.0–19.7). Strumento di **pianificazione, non di sicurezza**: l'avviso nell'app non va mai rimosso o nascosto.
+PWA di weather routing per barca a vela in Adriatico (lat 39.8–45.8, lon 12.0–19.7). Strumento di **pianificazione, non di sicurezza**: l'avviso nell'app non va mai rimosso. Unica eccezione (decisa il 2026-11-05): la barra in basso si chiude con ✕ fino al prossimo avvio; modale al primo avvio, avviso nel riepilogo rotta e nella finestra e voce nel menu restano sempre.
 
 ## Stack
 

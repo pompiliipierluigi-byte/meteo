@@ -5,7 +5,7 @@ import { it } from './i18n/it.js';
 import { fill } from './lib/text.js';
 import { getPref, setPref } from './lib/prefs.js';
 import { formatShortDateTime } from './lib/format.js';
-import { initDisclaimer } from './ui/disclaimer.js';
+import { initDisclaimer, showDisclaimerModal } from './ui/disclaimer.js';
 import { createMap } from './map/map.js';
 import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.js';
 import { createWeatherLayers } from './map/weather-layers.js';
@@ -78,7 +78,7 @@ function start() {
   const version = document.createElement('span');
   version.className = 'app-version';
   version.textContent = fill(it.app.version, { v: APP_VERSION });
-  bottombar.querySelector('.disclaimer-bar')?.append(version);
+  bottombar.querySelector('.disclaimer-close')?.before(version);
 
   const mapCtl = createMap(document.getElementById('map'));
   const menu = createSideMenu(topbar);
@@ -331,6 +331,15 @@ function start() {
     (on) => mapCtl.setSeamarks(on));
 
   // Diagnostica: ultimo errore dei dati meteo, conservato tra le sessioni per poterlo riferire.
+  // Avviso sempre raggiungibile dal menu, anche con la barra chiusa.
+  const discSec = menu.addSection(it.disclaimer.menuTitle);
+  const discBtn = document.createElement('button');
+  discBtn.type = 'button';
+  discBtn.className = 'btn-secondary';
+  discBtn.textContent = `⚠️ ${it.disclaimer.showAgain}`;
+  discBtn.addEventListener('click', () => { menu.close(); showDisclaimerModal(); });
+  discSec.append(discBtn);
+
   const diag = document.createElement('p');
   diag.className = 'diag';
   menu.addSection(it.diag.title).append(diag);

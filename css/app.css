@@ -78,6 +78,8 @@ button {
   font-weight: 600;
 }
 
+.disclaimer-close { background: none; border: 0; color: inherit; font-size: 1rem; line-height: 1; padding: 0.2rem 0.4rem; opacity: 0.8; cursor: pointer; }
+
 .link-btn {
   background: none;
   border: 0;

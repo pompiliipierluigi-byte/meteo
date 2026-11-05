@@ -17,6 +17,8 @@ export const it = {
     accept: 'Ho capito',
     bar: 'Solo pianificazione — non usare per la navigazione',
     showAgain: 'Leggi l\'avviso',
+    hideBar: 'Nascondi l\'avviso fino al prossimo avvio',
+    menuTitle: 'Avviso',
   },
   menu: {
     open: 'Apri il menu',

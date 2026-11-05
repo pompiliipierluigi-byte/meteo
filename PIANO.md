@@ -125,7 +125,34 @@ In sviluppo (PC, 4 core, pool da 2 worker, dati simulati): finestra di ~200 NM i
 
 ---
 
-## Dopo le fasi 1–4
+## Fase 5 — Luoghi, sole e luna, maree, temperatura del mare
+
+**Obiettivo**: richieste del 2026-11-05 dopo le prove della fase 4.
+
+**Decisioni (2026-11-05)**
+- Barra dell'avviso chiudibile con ✕ fino al prossimo avvio; avviso sempre nel menu, nel riepilogo rotta e nella finestra.
+- Maree da Open-Meteo Marine (`sea_level_height_msl`: marea + effetto meteo, ~8 km), con avviso di precisione limitata sotto costa.
+- Località: elenco di porti adriatici incluso nell'app (offline) + ricerca online con Open-Meteo Geocoding; il punto si sposta al mare più vicino.
+- Luoghi salvati (porto base, preferiti) su Supabase con login (tabella `places` con RLS).
+
+**Passi**
+1. Barra dell'avviso chiudibile: `js/ui/disclaimer.js`.
+2. Layer temperatura superficiale del mare (Open-Meteo Marine `sea_surface_temperature`), scaricato solo quando attivo: `js/map/sst-layer.js`.
+3. Sole e luna: alba, tramonto, crepuscoli, sorgere/tramonto e fase della luna calcolati in locale: `js/lib/astro.js` + test.
+4. Pagina "Sole, luna e maree" per una località, con grafico della marea e alte/basse: `js/weather/tides.js`, `js/ui/almanac-panel.js`.
+5. Località: elenco porti `data/places/ports.json`, ricerca (porti + geocoding), partenza/arrivo/waypoint da località: `js/places/search.js`, `js/ui/place-picker.js`.
+6. Luoghi salvati e porto base: `supabase/migrations/0003_places.sql`, `js/data/places-repo.js`, uso nel pannello rotta e nella pagina sole/luna/maree.
+
+**Fatto quando**
+- La barra si chiude e ricompare al riavvio; l'avviso resta nel menu.
+- Temperatura del mare sulla mappa con legenda; sonda con il valore.
+- Alba/tramonto entro ±2 min e luna entro ±5 min rispetto a effemeridi di riferimento (test).
+- Partenza impostabile scrivendo "Giulianova"; porto base salvato e proposto come partenza.
+- RLS verificata su `places`.
+
+---
+
+## Dopo le fasi 1–5
 
 - Esportazione del routage per condivisione e uso offline (PDF/JPG/altro).
 - Confronto esplicito tra modelli (stessa rotta con due modelli, sovrapposta).
