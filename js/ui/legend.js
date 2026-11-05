@@ -2,6 +2,7 @@
 
 import { WIND_STOPS, WAVE_STOPS, CURRENT_STOPS, css } from '../map/colors.js';
 import { it } from '../i18n/it.js';
+import { getPref, setPref } from '../lib/prefs.js';
 
 /**
  * Gradiente CSS con le soglie in proporzione al valore.
@@ -39,11 +40,43 @@ function scale(title, stops, label) {
 export function createLegend(mapEl) {
   const root = document.createElement('div');
   root.className = 'legend';
+  // A scomparsa sul lato: chiusa di default sugli schermi stretti, si apre con un tocco (o uno scorrimento).
+  const tab = document.createElement('button');
+  tab.type = 'button';
+  tab.className = 'legend-tab';
+  tab.textContent = it.legend.open;
+  tab.setAttribute('aria-label', it.legend.openLabel);
+  const hide = document.createElement('button');
+  hide.type = 'button';
+  hide.className = 'legend-hide';
+  hide.textContent = '‹';
+  hide.setAttribute('aria-label', it.legend.closeLabel);
+  const box = document.createElement('div');
+  box.className = 'legend-box';
+  let open = getPref('legendOpen', window.innerWidth > 700);
+  const apply = () => {
+    root.classList.toggle('collapsed', !open);
+    setPref('legendOpen', open);
+  };
+  tab.addEventListener('click', () => { open = true; apply(); });
+  hide.addEventListener('click', () => { open = false; apply(); });
+  // Scorrimento verso sinistra sulla legenda aperta: la chiude; verso destra sulla linguetta: la apre.
+  let x0 = null;
+  root.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+  root.addEventListener('touchend', (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    x0 = null;
+    if (dx < -30 && open) { open = false; apply(); }
+    if (dx > 30 && !open) { open = true; apply(); }
+  });
   const wind = scale(it.legend.wind, WIND_STOPS, (v) => String(v));
   const wave = scale(it.legend.wave, WAVE_STOPS, (v) => String(v));
   const current = scale(it.legend.current, CURRENT_STOPS, (v) => String(v));
-  root.append(wind, wave, current);
+  box.append(hide, wind, wave, current);
+  root.append(tab, box);
   mapEl.append(root);
+  apply();
   return {
     update(show) {
       wind.classList.toggle('hidden', !show.wind);

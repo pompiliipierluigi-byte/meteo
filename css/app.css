@@ -327,17 +327,49 @@ button {
 /* Legenda */
 .legend {
   position: absolute;
-  left: 0.5rem;
+  left: 0;
   top: 0.5rem;
   z-index: 800;
-  width: min(15rem, 60vw);
-  padding: 0.3rem 0.5rem 0.1rem;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   font-size: 0.65rem;
-  pointer-events: none;
 }
+.legend-box {
+  position: relative;
+  width: min(15rem, 60vw);
+  margin-left: 0.5rem;
+  padding: 0.3rem 1.6rem 0.1rem 0.5rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease-out;
+}
+.legend-hide {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.1rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--c-muted);
+}
+.legend-tab {
+  display: none;
+  padding: 0.5rem 0.35rem;
+  border: 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  color: var(--c-primary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+.legend.collapsed .legend-box { display: none; }
+.legend.collapsed .legend-tab { display: block; }
 .legend-scale { margin-bottom: 0.2rem; }
 .legend-title { font-weight: 600; margin-bottom: 0.1rem; }
 .legend-bar { height: 0.45rem; border-radius: 0.2rem; }
@@ -355,6 +387,10 @@ button {
 .probe td { padding: 0.1rem 0; }
 .probe-model { margin-top: 0.35rem; font-size: 0.7rem; color: var(--c-muted); }
 #app:has(.notice:not(.hidden)) .legend { top: 2.6rem; }
+
+/* Sonda: pulsante di chiusura grande (tocco col dito). */
+.probe-popup .leaflet-popup-close-button { width: 2.2rem !important; height: 2.2rem !important; font: 1.6rem/2.2rem system-ui, sans-serif !important; color: var(--c-fg) !important; }
+.probe-popup .leaflet-popup-content { margin-right: 2.4rem; }
 .diag { margin: 0; font-size: 0.75rem; color: var(--c-muted); word-break: break-word; }
 .app-version { font-weight: 400; font-size: 0.7rem; opacity: 0.7; }
 
@@ -569,3 +605,18 @@ button {
 .route-hour::before { display: none; }
 .route-eta { font-size: 11px; font-weight: 700; }
 .route-boat span { font-size: 20px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)); }
+
+/* Pannello rotta abbassato durante la scelta di un punto sulla mappa */
+.route-sheet.picking-min .route-sheet-body,
+.route-sheet.picking-min .route-sheet-head { display: none; }
+.route-pickbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.route-pickbar:not(.hidden)::before { content: '👆'; }
+.route-pickbar span { flex: 1; }

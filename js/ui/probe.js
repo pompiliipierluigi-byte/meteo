@@ -115,7 +115,7 @@ function render(p, lat, lon, tMs, waveRunMs) {
  * @returns {{refresh: () => void}} aggiorna il popup aperto (cambio di ora o di dati)
  */
 export function initProbe(map, L, getState, ignoreClick) {
-  const popup = L.popup({ maxWidth: 320, autoPanPaddingTopLeft: [10, 60], className: 'probe-popup' });
+  const popup = L.popup({ maxWidth: 320, autoPanPaddingTopLeft: [10, 60], className: 'probe-popup', closeButton: true });
   /** @type {{lat: number, lng: number} | null} */
   let at = null;
   const update = () => {
