@@ -51,8 +51,8 @@ export class WeatherService extends EventTarget {
    * @param {number} done
    * @param {number} total
    */
-  progress(label, done, total) {
-    this.dispatchEvent(new CustomEvent('progress', { detail: { label, done, total } }));
+  progress(label, done, total, waitMs = 0) {
+    this.dispatchEvent(new CustomEvent('progress', { detail: { label, done, total, waitMs } }));
   }
 
   /**
@@ -104,10 +104,15 @@ export class WeatherService extends EventTarget {
     const cfg = isMarine ? MARINE : MODELS[source];
     const points = indices.map((i) => gridPoint(this.grid, i % this.grid.nx, Math.floor(i / this.grid.nx)));
     const label = cfg.label;
+    let done = 0;
     this.progress(label, 0, points.length);
     const raw = await fetchPoints(isMarine ? 'marine' : 'forecast', points, isMarine ? WAVE_VARS : WIND_VARS, {
       model: isMarine ? undefined : MODELS[source].api,
-      onProgress: (d, t) => this.progress(label, d, t),
+      onProgress: (d, t) => {
+        done = d;
+        this.progress(label, d, t);
+      },
+      onWait: (ms) => this.progress(label, done, points.length, ms),
     });
     const trimmed = trimTimes(raw);
     const field = isMarine ? waveField(this.grid, indices, trimmed) : windField(this.grid, indices, trimmed);
@@ -192,7 +197,8 @@ export class WeatherService extends EventTarget {
         loaded[id] = await this.load(id, opts);
       } catch (err) {
         // In Auto ICON-2I è facoltativo: senza, si usa solo ECMWF.
-        if (choice === 'auto' && id === 'icon2i') {
+        // Ma un errore di quota o di rete vale per tutti: inutile riprovare con ECMWF.
+        if (choice === 'auto' && id === 'icon2i' && !err?.quota && !/raggiungibile/.test(err?.message ?? '')) {
           console.warn('ICON-2I non disponibile:', err);
           continue;
         }

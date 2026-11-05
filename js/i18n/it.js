@@ -80,9 +80,10 @@ export const it = {
   },
   notice: {
     loading: 'Scarico {label}: {done}/{total} punti…',
+    quotaWait: 'Attendo la quota Open-Meteo ({s} s).',
     loadingStart: 'Carico i dati meteo…',
     error: 'Dati meteo non disponibili: {msg}',
-    quota: 'Limite di richieste Open-Meteo raggiunto: riprova più tardi.',
+    quota: 'Limite di richieste Open-Meteo raggiunto, riprova più tardi ({msg}).',
     stale: 'Aggiornamento non riuscito: mostro i dati del {date}.',
     offline: 'Sei offline: mostro i dati del {date}.',
     offlineNoData: 'Sei offline e non ci sono dati meteo salvati su questo dispositivo.',
