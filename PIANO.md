@@ -96,13 +96,18 @@ Riferimenti: [SPEC.md](SPEC.md) per i requisiti, [CLAUDE.md](CLAUDE.md) per conv
 **Da riprendere (aperti al termine della fase 3, 2026-11-05)**
 - ~~Testo della modale di avviso~~: aggiornato (versione 2, correnti "stimate dal modello").
 - Verifica su smartphone del tempo di calcolo di una rotta (voce "calcolo in … s" nel riepilogo; obiettivo < 3 s per ~100 NM).
-- Barbe meteorologiche del vento: come opzione nel menu Livelli, frecce predefinite (deciso 2026-11-05).
+- ~~Barbe meteorologiche del vento~~: fatte, opzione nel menu Livelli, frecce predefinite.
 - Ramo `claude/fase-3-routing-wip` su GitHub da eliminare (a mano).
 
 **Note per lo sviluppo**
 - Dall'ambiente di sviluppo Open-Meteo, Supabase, CARTO e osmdata non sono raggiungibili: le prove nel browser usano dati simulati (Playwright `page.route`); per scaricare dati esterni si usa GitHub Actions (es. `.github/workflows/coastline.yml`).
 - Quota Open-Meteo: limitatore a 300 chiamate/min (`js/weather/rate-limit.js`); la finestra di partenza deve riusare lo stesso meteo di corridoio per i 24 run, senza nuove richieste.
 - Migrazioni: provarle con `sh supabase/tests/run-local.sh` (PostgreSQL locale con schema `auth` simulato) prima di farle eseguire nel SQL Editor di Supabase.
+
+**Stato (2026-11-05)**: passi 1–5 fatti (versione 1.8). Da fare a mano:
+- eseguire `supabase/migrations/0002_routes.sql` nel SQL Editor di Supabase (guida in `supabase/README.md`), poi `node supabase/tests/rls-rest-check.mjs` per la RLS sul progetto reale;
+- su smartphone: tempo della finestra (obiettivo < 60 s, voce "24 partenze calcolate in … s") e della rotta singola.
+In sviluppo (PC, 4 core, pool da 2 worker, dati simulati): finestra di ~200 NM in 20–25 s, interfaccia reattiva, annullamento ok; rotta salvata riaperta con riepilogo e tabella identici.
 
 **Passi**
 1. Migrazione SQL: tabella `routes` + RLS: `supabase/migrations/0002_routes.sql`.
