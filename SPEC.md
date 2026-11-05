@@ -30,7 +30,7 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 ### 2.1 Mappa
 
 - Mappa Leaflet a tutto schermo, centrata su `BBOX`, con limiti di pan (`maxBounds` = BBOX + margine).
-- Mappa base: **CARTO chiara** (predefinita) o **OpenStreetMap** standard; overlay **OpenSeaMap** (segnalamenti) attivabile.
+- Mappa base: **CARTO chiara** (predefinita) o **OpenStreetMap** standard; overlay **OpenSeaMap** (segnalamenti) attivabile. CARTO richiede una chiave gratuita (`CARTO_BASEMAPS_KEY` in `config.js`, parametro `key` nelle URL delle tile): senza chiave il menu offre solo OpenStreetMap, che diventa la predefinita.
 - **Menu laterale a scomparsa** con: mappa base, overlay, layer meteo (vento, onda totale, onda da vento, swell, correnti), modello, opacità.
 - Tocco su un punto → popup "sonda" con i valori all'ora selezionata: vento (nodi, direzione di provenienza), raffica, onda (m, direzione di provenienza, periodo s), modello usato.
 
@@ -478,7 +478,7 @@ Tutte le domande sono state chiuse il 2026-11-04. Numeri mantenuti perché richi
 |---|---|---|
 | 1 | Indirizzo | `pompiliipierluigi-byte.github.io/meteo/` |
 | 2 | Utenti | Tu + amici/equipaggio (2–4), non commerciale |
-| 3 | Mappa | CARTO chiara predefinita, OSM alternativa, OpenSeaMap attivabile; menu laterale a scomparsa |
+| 3 | Mappa | CARTO chiara predefinita (con chiave CARTO Basemaps; senza chiave OSM), OSM alternativa, OpenSeaMap attivabile; menu laterale a scomparsa |
 | 4 | GFS | Selezionabile subito; confronto rotte tra modelli dopo le fasi 1–4 |
 | 5 | Orizzonte | 5 giorni per mappa e routing (Auto: ICON-2I 0–72 h, ECMWF oltre) |
 | 6 | Griglia | Larga (~0.25°) per la mappa, fine solo nel corridoio della rotta; download solo a nuovo run |

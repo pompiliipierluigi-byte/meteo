@@ -11,7 +11,7 @@ import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.j
 import { createWeatherLayers } from './map/weather-layers.js';
 import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
-import { L } from './map/map.js';
+import { L, AVAILABLE_BASEMAPS } from './map/map.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
 import { createTimeSlider } from './ui/time-slider.js';
@@ -109,10 +109,8 @@ function start() {
     min: 0.1, max: 1, step: 0.05, value: ls.opacity, format: (v) => `${Math.round(v * 100)} %`,
   }, (v) => wx.setOpacity(v));
 
-  radioGroup(menu.addSection(it.menu.basemap), 'basemap', [
-    { value: 'carto', label: it.map.carto },
-    { value: 'osm', label: it.map.osm },
-  ], mapCtl.getBasemap(), (v) => mapCtl.setBasemap(/** @type {any} */ (v)));
+  radioGroup(menu.addSection(it.menu.basemap), 'basemap', AVAILABLE_BASEMAPS.map((id) => (
+    { value: id, label: it.map[id] })), mapCtl.getBasemap(), (v) => mapCtl.setBasemap(/** @type {any} */ (v)));
 
   checkbox(menu.addSection(it.menu.overlays), it.map.openseamap, mapCtl.getSeamarks(),
     (on) => mapCtl.setSeamarks(on));

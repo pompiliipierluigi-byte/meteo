@@ -1,7 +1,7 @@
 // Mappa Leaflet: BBOX, mappe base, overlay OpenSeaMap, attribuzioni.
 
 import * as L from '../../vendor/leaflet/leaflet-src.esm.js';
-import { BBOX, MAP_BOUNDS_MARGIN_DEG } from '../config.js';
+import { BBOX, MAP_BOUNDS_MARGIN_DEG, CARTO_BASEMAPS_KEY } from '../config.js';
 import { it } from '../i18n/it.js';
 import { getPref, setPref } from '../lib/prefs.js';
 
@@ -9,8 +9,9 @@ export { L };
 
 /** @typedef {'carto' | 'osm'} BasemapId */
 
+/** @type {Partial<Record<BasemapId, () => import('../../vendor/leaflet/leaflet-src.esm.js').TileLayer>>} */
 const BASEMAPS = {
-  carto: () => L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  carto: () => L.tileLayer(`https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(CARTO_BASEMAPS_KEY)}`, {
     subdomains: 'abcd',
     maxZoom: 18,
     crossOrigin: true,
@@ -22,6 +23,11 @@ const BASEMAPS = {
     attribution: it.attribution.osm,
   }),
 };
+// Senza chiave CARTO restituisce solo tile "API KEY REQUIRED": la mappa non si offre.
+if (!CARTO_BASEMAPS_KEY) delete BASEMAPS.carto;
+
+/** Mappe base disponibili, nell'ordine del menu (la prima è la predefinita). */
+export const AVAILABLE_BASEMAPS = /** @type {BasemapId[]} */ (['carto', 'osm'].filter((id) => id in BASEMAPS));
 
 /**
  * Crea la mappa nel contenitore indicato.
@@ -57,8 +63,8 @@ export function createMap(el) {
   L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);
 
   /** @type {BasemapId} */
-  let basemapId = getPref('basemap', 'carto');
-  if (!(basemapId in BASEMAPS)) basemapId = 'carto';
+  let basemapId = getPref('basemap', AVAILABLE_BASEMAPS[0]);
+  if (!(basemapId in BASEMAPS)) basemapId = AVAILABLE_BASEMAPS[0];
   let basemap = BASEMAPS[basemapId]().addTo(map);
 
   const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {

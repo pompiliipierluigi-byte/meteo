@@ -2,10 +2,11 @@
 // Percorsi relativi allo scope (sottopercorso /meteo/ su GitHub Pages).
 // I dati meteo non passano da qui: sono in IndexedDB (js/weather/cache.js), consultabili offline.
 
-const VERSION = '0.1.0-11';
+const VERSION = '0.1.0-12';
 const SHELL_CACHE = `shell-${VERSION}`;
 /** Cache delle tile (conservata tra le versioni), con numero massimo di elementi. */
-const TILE_CACHE = 'tiles-v1';
+// v2: scarta le tile CARTO "API KEY REQUIRED" salvate dalla v1.
+const TILE_CACHE = 'tiles-v2';
 const TILE_MAX_ENTRIES = 800;
 /** Host delle tile servite con CORS (risposte non opache: occupano lo spazio reale). */
 const TILE_HOSTS = /(^|\.)basemaps\.cartocdn\.com$|^tile\.openstreetmap\.org$/;
@@ -72,7 +73,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(
-        keys.filter((k) => k.startsWith('shell-') && k !== SHELL_CACHE).map((k) => caches.delete(k)),
+        keys.filter((k) => (k.startsWith('shell-') && k !== SHELL_CACHE) || (k.startsWith('tiles-') && k !== TILE_CACHE)).map((k) => caches.delete(k)),
       ))
       .then(() => self.clients.claim()),
   );
