@@ -355,3 +355,4 @@ button {
 .probe td { padding: 0.1rem 0; }
 .probe-model { margin-top: 0.35rem; font-size: 0.7rem; color: var(--c-muted); }
 #app:has(.notice:not(.hidden)) .legend { top: 2.6rem; }
+.diag { margin: 0; font-size: 0.75rem; color: var(--c-muted); word-break: break-word; }

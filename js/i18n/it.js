@@ -64,6 +64,10 @@ export const it = {
     noData: 'n.d.',
     noWeather: 'Dati meteo non ancora caricati.',
   },
+  diag: {
+    title: 'Diagnostica',
+    none: 'Nessun errore registrato.',
+  },
   legend: {
     wind: 'Vento (nodi)',
     wave: 'Onda (m)',

@@ -35,14 +35,14 @@ export const OPEN_METEO = Object.freeze({
   /** Giorni richiesti (≤ 14 per non aumentare il peso in quota); si tagliano poi a HORIZON_H. */
   forecastDays: 6,
   /** Punti per richiesta multi-coordinata (lunghezza URL contenuta). */
-  chunkSize: 100,
+  chunkSize: 50,
   /** Pausa tra due blocchi consecutivi (ms). */
-  chunkPauseMs: 250,
+  chunkPauseMs: 500,
   /**
    * Budget di chiamate al minuto (limite gratuito: 600/min, ogni punto = 1 chiamata, ×2 oltre
    * 10 variabili). Margine per altre schede o ricariche.
    */
-  callsPerMinute: 500,
+  callsPerMinute: 300,
   /** Tentativi su errore 429 della quota al minuto (attesa di un minuto tra uno e l'altro). */
   maxMinuteRetries: 3,
 });

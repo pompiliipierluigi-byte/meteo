@@ -133,6 +133,22 @@ function start() {
   checkbox(menu.addSection(it.menu.overlays), it.map.openseamap, mapCtl.getSeamarks(),
     (on) => mapCtl.setSeamarks(on));
 
+  // Diagnostica: ultimo errore dei dati meteo, conservato tra le sessioni per poterlo riferire.
+  const diag = document.createElement('p');
+  diag.className = 'diag';
+  menu.addSection(it.diag.title).append(diag);
+  /** @param {{msg: string, t: number} | null} e */
+  const showLastError = (e) => {
+    diag.textContent = e ? `${formatShortDateTime(e.t)} — ${e.msg}` : it.diag.none;
+  };
+  showLastError(getPref('lastError', null));
+  /** @param {unknown} err */
+  const recordError = (err) => {
+    const e = { msg: String(/** @type {any} */ (err)?.message ?? err), t: Date.now() };
+    setPref('lastError', e);
+    showLastError(e);
+  };
+
   const probe = initProbe(mapCtl.map, L, () => state);
 
   const slider = createTimeSlider(bottombar, (tMs) => {
@@ -168,22 +184,25 @@ function start() {
     notice.show(it.notice.loadingStart);
     try {
       loading = true;
-      // In sequenza: l'onda (che al primo avvio calcola anche la maschera mare), poi il vento.
-      const waves = await weather.getWaves({ force });
+      // In sequenza (quota): prima il vento, mostrato subito, poi l'onda.
       const wind = await weather.getWind(state.choice, { force });
       if (seq !== loadSeq) return;
       state.wind = wind;
-      state.waves = waves;
-      showDataBanner();
       slider.setMarker(wind.switchMs, it.model.autoSwitch);
       wx.setWind(wind.field);
-      wx.setWaves(waves.field);
       probe.refresh();
       updateStatus();
+      const waves = await weather.getWaves({ force });
+      if (seq !== loadSeq) return;
+      state.waves = waves;
+      wx.setWaves(waves.field);
+      probe.refresh();
+      showDataBanner();
       document.dispatchEvent(new CustomEvent('weather-updated'));
     } catch (err) {
       if (seq !== loadSeq) return;
       console.error(err);
+      recordError(err);
       if (!navigator.onLine && !state.wind) {
         notice.show(it.notice.offlineNoData, 'warn');
         return;
@@ -208,8 +227,10 @@ function start() {
     }
     const date = formatShortDateTime(Math.min(wind.fetchedMs, waves.fetchedMs));
     if (!navigator.onLine) notice.show(fill(it.notice.offline, { date }), 'warn');
-    else if (wind.stale || waves.stale) notice.show(fill(it.notice.stale, { date }), 'warn');
-    else notice.hide();
+    else if (wind.stale || waves.stale) {
+      recordError(wind.stale || waves.stale);
+      notice.show(fill(it.notice.stale, { date }), 'warn');
+    } else notice.hide();
   }
 
   window.addEventListener('offline', showDataBanner);
