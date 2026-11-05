@@ -11,6 +11,9 @@ import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.j
 import { createWeatherLayers } from './map/weather-layers.js';
 import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
+import { createRoutePoints } from './ui/route-points.js';
+import { createRoutePanel } from './ui/route-panel.js';
+import { RoutingClient } from './routing/client.js';
 import { initAuth } from './ui/auth.js';
 import { getClient } from './data/supabase.js';
 import { createBoatsRepo } from './data/boats-repo.js';
@@ -331,7 +334,15 @@ function start() {
     showLastError(e);
   };
 
-  const probe = initProbe(mapCtl.map, L, () => state);
+  // --- Rotta (fase 3) ---
+  const routing = new RoutingClient();
+  const routePoints = createRoutePoints(mapCtl.map, L, {
+    snap: (pts) => routing.snap(pts, 0.15),
+    notify: (text, kind = 'info') => notice.show(text, kind),
+  });
+  const routePanel = createRoutePanel(bottombar, topbar, routePoints);
+
+  const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null);
 
   const slider = createTimeSlider(bottombar, (tMs) => {
     state.tMs = tMs;
@@ -342,6 +353,8 @@ function start() {
   });
   state.tMs = slider.get();
   wx.setTime(state.tMs);
+  // Il pannello rotta sta sopra il cursore temporale.
+  bottombar.prepend(routePanel.root);
 
   /** Aggiorna l'indicazione del modello effettivo e del run per l'ora selezionata. */
   function updateStatus() {

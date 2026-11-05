@@ -510,3 +510,38 @@ button {
 .pc-label { font-size: 9px; fill: var(--c-muted); font-family: system-ui, sans-serif; }
 .pc-bold { font-weight: 700; fill: var(--c-fg); }
 .profile-chart { display: flex; flex-direction: column; gap: 0.2rem; }
+
+/* Rotta */
+.route-btn.active { background: rgba(255, 196, 61, 0.3); }
+.route-sheet {
+  max-height: 45vh;
+  overflow-y: auto;
+  margin: 0 -0.5rem 0.25rem;
+  padding: 0 0.75rem 0.5rem;
+  background: var(--c-bg);
+  color: var(--c-fg);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
+}
+.route-sheet-head { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; background: var(--c-bg); padding-top: 0.25rem; z-index: 1; }
+.route-sheet-head h2 { margin: 0; font-size: 1rem; }
+.route-sheet-head .icon-btn { color: var(--c-fg); }
+.route-sheet-body { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; }
+.route-points { display: flex; flex-direction: column; gap: 0.3rem; }
+.rp-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.25rem 0; border-bottom: 1px solid var(--c-border); }
+.rp-text { display: flex; flex-direction: column; min-width: 0; }
+.rp-text small { color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.rp-buttons { display: flex; gap: 0.25rem; flex-shrink: 0; }
+.btn-small { padding: 0.3rem 0.55rem; border: 1px solid var(--c-border); border-radius: var(--radius); background: #fff; color: var(--c-fg); font-size: 0.8rem; }
+.btn-small:disabled { opacity: 0.4; }
+.btn-small.active { border-color: var(--c-primary); background: var(--c-primary); color: #fff; }
+.picking { cursor: crosshair; }
+.rp-icon span {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  color: #fff; font-weight: 700; font-size: 12px;
+}
+.rp-start span { background: #1d8a3a; }
+.rp-end span { background: #b3261e; }
+.rp-way span { background: #0e4c7a; }

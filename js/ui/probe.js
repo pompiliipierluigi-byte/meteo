@@ -111,9 +111,10 @@ function render(p, lat, lon, tMs, waveRunMs) {
  * @param {import('../../vendor/leaflet/leaflet-src.esm.js').Map} map
  * @param {typeof import('../../vendor/leaflet/leaflet-src.esm.js')} L
  * @param {() => {wind: import('../weather/weather-service.js').WindResult | null, waves: import('../weather/weather-service.js').WaveResult | null, tMs: number}} getState
+ * @param {() => boolean} [ignoreClick] true = il tocco serve ad altro (es. scelta di un punto della rotta)
  * @returns {{refresh: () => void}} aggiorna il popup aperto (cambio di ora o di dati)
  */
-export function initProbe(map, L, getState) {
+export function initProbe(map, L, getState, ignoreClick) {
   const popup = L.popup({ maxWidth: 320, autoPanPaddingTopLeft: [10, 60], className: 'probe-popup' });
   /** @type {{lat: number, lng: number} | null} */
   let at = null;
@@ -126,6 +127,7 @@ export function initProbe(map, L, getState) {
     popup.setContent(html);
   };
   map.on('click', (e) => {
+    if (ignoreClick?.()) return;
     at = e.latlng;
     popup.setLatLng(e.latlng);
     update();

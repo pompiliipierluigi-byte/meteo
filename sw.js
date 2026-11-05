@@ -72,6 +72,8 @@ const SHELL = [
   './js/ui/boats-panel.js',
   './js/ui/profile-panel.js',
   './js/ui/polar-chart.js',
+  './js/ui/route-points.js',
+  './js/ui/route-panel.js',
   './vendor/supabase/supabase.js',
   './vendor/leaflet/leaflet-src.esm.js',
   './vendor/leaflet/leaflet.css',
