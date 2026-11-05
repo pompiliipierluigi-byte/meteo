@@ -15,6 +15,9 @@ import { initAuth } from './ui/auth.js';
 import { getClient } from './data/supabase.js';
 import { createBoatsRepo } from './data/boats-repo.js';
 import { openBoatsPanel } from './ui/boats-panel.js';
+import { createProfileRepo, cleanProfile } from './data/profile-repo.js';
+import { openProfilePanel } from './ui/profile-panel.js';
+import { errorMessage } from './data/supabase.js';
 import { L, AVAILABLE_BASEMAPS } from './map/map.js';
 import { createNotice } from './ui/notice.js';
 import { createModelPicker } from './ui/model-picker.js';
@@ -103,29 +106,121 @@ function start() {
     loadWeather(false);
   }, () => loadWeather(true));
 
+  // --- Account: profilo, barca attiva, barche (solo con login, SPEC §2.9) ---
   const auth = initAuth(topbar, menu.addSection(it.auth.section));
   const boatsRepo = createBoatsRepo(getClient);
-  const boatsSec = menu.addSection(it.boats.section);
-  const boatsHint = document.createElement('p');
-  boatsHint.className = 'muted small';
+  const profileRepo = createProfileRepo(getClient);
+  /** @type {import('./data/profile-repo.js').Profile | null} */
+  let profile = null;
+  /** @type {import('./data/boats-repo.js').Boat[]} */
+  let boats = [];
+  const accountSec = menu.addSection(it.boats.section);
+  const accountHint = document.createElement('p');
+  accountHint.className = 'muted small';
+  const activeLine = document.createElement('p');
+  activeLine.className = 'small';
+  const accountBtns = document.createElement('div');
+  accountBtns.className = 'btn-row';
   const boatsBtn = document.createElement('button');
   boatsBtn.type = 'button';
   boatsBtn.className = 'btn-secondary';
   boatsBtn.textContent = it.boats.open;
+  const profileBtn = document.createElement('button');
+  profileBtn.type = 'button';
+  profileBtn.className = 'btn-secondary';
+  profileBtn.textContent = it.profile.open;
+  accountBtns.append(boatsBtn, profileBtn);
+  accountSec.append(accountHint, activeLine, accountBtns);
+
+  const activeBoat = () => boats.find((b) => b.id === profile?.default_boat_id) ?? null;
+  const renderAccount = () => {
+    const on = Boolean(auth.user());
+    accountBtns.classList.toggle('hidden', !on);
+    activeLine.classList.toggle('hidden', !on);
+    accountHint.classList.toggle('hidden', on);
+    accountHint.textContent = it.boats.needLogin;
+    const a = activeBoat();
+    activeLine.textContent = a ? `${it.boats.activeLabel}: ${a.name}` : it.boats.noActive;
+  };
+
+  /** Ricarica profilo e barche dopo login o modifiche; errori mostrati senza bloccare mappa e meteo. */
+  async function refreshAccount() {
+    if (!auth.user()) {
+      profile = null;
+      boats = [];
+      renderAccount();
+      return;
+    }
+    try {
+      [profile, boats] = await Promise.all([profileRepo.get(), boatsRepo.list()]);
+      // Preferenze salvate nel profilo: modello applicato all'accesso.
+      const pref = profile?.settings?.model;
+      if (pref && MODEL_CHOICES.includes(pref) && pref !== state.choice) {
+        state.choice = pref;
+        setPref('model', pref);
+        picker.setChoice(pref);
+        loadWeather(false);
+      }
+    } catch (err) {
+      console.warn(err);
+      recordError(err);
+      notice.show(errorMessage(err), 'error');
+    }
+    renderAccount();
+  }
+
+  /** @param {string | null} boatId */
+  async function setActiveBoat(boatId) {
+    if (!profile) return;
+    const { value } = cleanProfile({ default_boat_id: boatId });
+    await profileRepo.update(profile.id, value);
+    profile.default_boat_id = boatId;
+    renderAccount();
+  }
+
   boatsBtn.addEventListener('click', () => {
     menu.close();
-    openBoatsPanel({ repo: boatsRepo });
+    const panel = openBoatsPanel({
+      repo: boatsRepo,
+      onChanged: () => { refreshAccount(); },
+      extraActions: (b) => {
+        if (b.id === profile?.default_boat_id) return Object.assign(document.createElement('span'), { className: 'badge badge-active', textContent: `★ ${it.boats.active}` });
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'btn-secondary';
+        x.textContent = it.boats.makeActive;
+        x.addEventListener('click', async () => {
+          x.disabled = true;
+          try {
+            await setActiveBoat(b.id);
+            panel.close();
+            boatsBtn.click();
+          } catch (err) {
+            x.disabled = false;
+            notice.show(errorMessage(err), 'error');
+          }
+        });
+        return x;
+      },
+    });
   });
-  boatsSec.append(boatsHint, boatsBtn);
-  /** Barche disponibili solo con l'utente collegato (SPEC §2.9). */
-  const syncAccount = () => {
-    const on = Boolean(auth.user());
-    boatsBtn.classList.toggle('hidden', !on);
-    boatsHint.textContent = on ? '' : it.boats.needLogin;
-    boatsHint.classList.toggle('hidden', on);
-  };
-  auth.onChange(syncAccount);
-  syncAccount();
+
+  profileBtn.addEventListener('click', () => {
+    menu.close();
+    if (!profile) {
+      notice.show(it.profile.unavailable, 'error');
+      return;
+    }
+    openProfilePanel({
+      profile,
+      repo: profileRepo,
+      onSaved: (p) => { profile = p; renderAccount(); },
+      currentSettings: () => ({ model: state.choice, layers: wx.settings() }),
+    });
+  });
+
+  auth.onChange(() => { refreshAccount(); });
+  renderAccount();
 
   const legend = createLegend(document.getElementById('map'));
   const waveNames = { wave: it.layers.waveTotal, wwave: it.layers.waveWind, swell: it.layers.waveSwell };

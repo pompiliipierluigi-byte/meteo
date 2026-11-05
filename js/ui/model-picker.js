@@ -11,10 +11,11 @@ import { radioGroup } from './side-menu.js';
  * @param {import('../weather/models.js').ModelChoice} current
  * @param {(choice: import('../weather/models.js').ModelChoice) => void} onChange
  * @param {() => void} onRefresh
- * @returns {{setStatus: (modelId: import('../weather/models.js').ModelId | null, runMs: number | null) => void, setBusy: (busy: boolean) => void}}
+ * @returns {{setStatus: (modelId: import('../weather/models.js').ModelId | null, runMs: number | null) => void, setBusy: (busy: boolean) => void,
+ *   setChoice: (choice: import('../weather/models.js').ModelChoice) => void}}
  */
 export function createModelPicker(section, topbar, current, onChange, onRefresh) {
-  radioGroup(section, 'model', MODEL_CHOICES.map((c) => ({ value: c, label: it.model[c] })), current,
+  const setRadio = radioGroup(section, 'model', MODEL_CHOICES.map((c) => ({ value: c, label: it.model[c] })), current,
     (v) => onChange(/** @type {any} */ (v)));
 
   const status = document.createElement('div');
@@ -37,6 +38,7 @@ export function createModelPicker(section, topbar, current, onChange, onRefresh)
       const run = runMs ? ` · ${it.model.run} ${formatShortDateTime(runMs)}` : '';
       status.textContent = `${modelLabel(modelId)}${run}`;
     },
+    setChoice: (choice) => setRadio(choice),
     setBusy(busy) {
       refresh.disabled = busy;
       refresh.classList.toggle('spin', busy);
