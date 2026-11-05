@@ -2,13 +2,14 @@
 // correttivi), calcolo nel worker con avanzamento e annullamento, riepilogo, avvisi e tabella dei passi.
 
 import { it } from '../i18n/it.js';
-import { formatLatLon, formatDateTime, formatShortDateTime, formatDeg, fmtNum } from '../lib/format.js';
+import { formatLatLon, formatDateTime, formatShortDateTime, formatDeg, fmtNum, formatHm } from '../lib/format.js';
 import { el, btn, input, field } from './panel.js';
 import { correctionsFor, cleanProfile, PROFILE_DEFAULTS } from '../data/profile-repo.js';
 import { errorMessage } from '../data/supabase.js';
 import { fill } from '../lib/text.js';
 import { modelLabel } from '../weather/models.js';
 import { departureTimes, runDepartureWindow } from '../routing/departure-window.js';
+import { categorize } from '../routing/departure-categories.js';
 
 /**
  * Dipendenze per il calcolo.
@@ -337,7 +338,8 @@ export function createRoutePanel(host, topbar, points, deps) {
   /**
    * Stato dell'ultima finestra calcolata.
    * @type {{departures: number[], runs: (import('../routing/departure-window.js').WindowRun | undefined)[],
-   *   selected: number | null, info: {boat: any, sails: string, weather: any, secs: number}} | null}
+   *   selected: number | null, info: {boat: any, sails: string, weather: any, secs: number},
+   *   limits: import('../routing/run.js').RouteRequest['limits'], waveWarningM: number} | null}
    */
   let win = null;
 
@@ -347,12 +349,12 @@ export function createRoutePanel(host, topbar, points, deps) {
     const { c, boat, route } = r;
     begin('window');
     const departures = departureTimes(Math.max(c.tMs, Date.now()));
-    win = { departures, runs: new Array(departures.length), selected: null, info: { boat, sails, weather: null, secs: 0 } };
+    const request = buildRequest(c, boat, route, departures[0]);
+    win = { departures, runs: new Array(departures.length), selected: null, info: { boat, sails, weather: null, secs: 0 }, limits: request.limits, waveWarningM: request.waveWarningM };
     renderWindow();
     try {
       const weather = await corridorWeather(c, route, departures[departures.length - 1]);
       win.info.weather = weather;
-      const request = buildRequest(c, boat, route, departures[0]);
       const t0 = performance.now();
       setBar(0.5, fill(t.windowProgress, { n: 0, total: departures.length }));
       const job = runDepartureWindow({
@@ -408,12 +410,16 @@ export function createRoutePanel(host, topbar, points, deps) {
     if (!win) return;
     windowBox.append(el('h3', 'route-window-title', t.windowTitle), el('p', 'route-disclaimer', `⚠️ ${it.disclaimer.bar}`));
     const list = el('div', 'route-window-list');
-    const hm = (h) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
+    const hm = formatHm;
+    // Categorie solo a finestra completa (prima cambierebbero a ogni run).
+    const complete = win.runs.filter(Boolean).length === win.departures.length;
+    const cls = complete ? categorize(win.runs, { limits: win.limits, waveWarningM: win.waveWarningM }).runs : null;
     win.departures.forEach((d, i) => {
       const run = win.runs[i];
+      const tags = cls ? [...cls[i].categories.map((k) => t.categories[k]), ...(cls[i].status === 'limit' ? [t.outOfLimits] : [])] : [];
       const label = !run ? `${formatShortDateTime(d)} …`
         : run.error ? `${formatShortDateTime(d)} — ${t.windowNotFound}`
-          : `${formatShortDateTime(d)} — ${hm(run.summary.duration_h)} h, ${t.motorShort} ${hm(run.summary.motor_h)}, ${fmtNum(run.summary.max_tws_kn, 0)} kn`;
+          : `${formatShortDateTime(d)} — ${hm(run.summary.duration_h)} h, ${t.motorShort} ${hm(run.summary.motor_h)}, ${fmtNum(run.summary.max_tws_kn, 0)} kn${tags.length ? ` · ${tags.join(', ')}` : ''}`;
       const b = btn(label, () => selectRun(i), win.selected === i ? 'btn-small active' : 'btn-small');
       b.disabled = !run;
       list.append(b);
@@ -433,7 +439,7 @@ export function createRoutePanel(host, topbar, points, deps) {
     resultBox.append(el('p', 'route-disclaimer', `⚠️ ${it.disclaimer.bar}`));
     const grid = el('dl', 'route-summary');
     const item = (k, v) => grid.append(el('dt', '', k), el('dd', '', v));
-    const hm = (h) => `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, '0')} min`;
+    const hm = (h) => `${formatHm(h).replace(':', ' h ')} min`;
     item(t.sum.arrival, formatDateTime(s.arrival_ms));
     item(t.sum.duration, hm(s.duration_h));
     item(t.sum.distance, `${fmtNum(s.distance_nm, 1)} NM`);

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatDegMin, formatLatLon, formatDeg, compass16, formatShortDateTime, localHour, fmtNum } from '../js/lib/format.js';
+import { formatDegMin, formatLatLon, formatDeg, compass16, formatShortDateTime, localHour, fmtNum, formatHm } from '../js/lib/format.js';
 
 test('gradi e minuti decimali', () => {
   assert.equal(formatLatLon(43.504167, 16.435), '43°30.25\'N 016°26.10\'E');
@@ -25,4 +25,10 @@ test('ora locale Europe/Rome (CET/CEST)', () => {
 test('numeri non disponibili', () => {
   assert.equal(fmtNum(NaN, 1), 'n.d.');
   assert.equal(fmtNum(1.25, 1), '1.3');
+});
+
+test('durata h:mm arrotondata al minuto senza "60"', () => {
+  assert.equal(formatHm(35.9995), '36:00');
+  assert.equal(formatHm(1.5), '1:30');
+  assert.equal(formatHm(0), '0:00');
 });

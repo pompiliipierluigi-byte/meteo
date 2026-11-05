@@ -107,3 +107,14 @@ export function compass16(deg) {
 export function fmtNum(x, digits) {
   return Number.isFinite(x) ? x.toFixed(digits) : 'n.d.';
 }
+
+/**
+ * Durata in ore → "h:mm" (arrotondata al minuto).
+ * @param {number} hours
+ * @returns {string}
+ */
+export function formatHm(hours) {
+  if (!Number.isFinite(hours)) return '';
+  const min = Math.round(hours * 60);
+  return `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
+}
