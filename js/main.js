@@ -17,6 +17,8 @@ import { createBoatsRepo } from './data/boats-repo.js';
 import { openBoatsPanel } from './ui/boats-panel.js';
 import { createProfileRepo, cleanProfile } from './data/profile-repo.js';
 import { openProfilePanel } from './ui/profile-panel.js';
+import { polarChart } from './ui/polar-chart.js';
+import { correctionsFor, PROFILE_DEFAULTS } from './data/profile-repo.js';
 import { errorMessage } from './data/supabase.js';
 import { L, AVAILABLE_BASEMAPS } from './map/map.js';
 import { createNotice } from './ui/notice.js';
@@ -169,6 +171,19 @@ function start() {
     renderAccount();
   }
 
+  const chartLabels = { kn: 'kn', full: it.chart.full, white: it.chart.white, tws: it.chart.tws };
+  /**
+   * Diagramma polare di una barca con i correttivi indicati (di default quelli del profilo).
+   * @param {import('./data/boats-repo.js').Boat} b
+   * @param {Record<string, any>} [prof]
+   */
+  const boatChart = (b, prof) => {
+    if (!b.polars.full) return null;
+    const c = correctionsFor(/** @type {any} */ ({ ...PROFILE_DEFAULTS, ...(prof ?? profile ?? {}) }), b);
+    if (![c.upwindEffPct, c.downwindEffPct, c.whiteDownwindPct, c.splitTwaDeg].every(Number.isFinite)) return null;
+    return polarChart({ full: b.polars.full.data, white: b.polars.white?.data ?? null }, c, { labels: chartLabels });
+  };
+
   /** @param {string | null} boatId */
   async function setActiveBoat(boatId) {
     if (!profile) return;
@@ -183,6 +198,7 @@ function start() {
     const panel = openBoatsPanel({
       repo: boatsRepo,
       onChanged: () => { refreshAccount(); },
+      preview: (b) => boatChart(b),
       extraActions: (b) => {
         if (b.id === profile?.default_boat_id) return Object.assign(document.createElement('span'), { className: 'badge badge-active', textContent: `★ ${it.boats.active}` });
         const x = document.createElement('button');
@@ -216,6 +232,23 @@ function start() {
       repo: profileRepo,
       onSaved: (p) => { profile = p; renderAccount(); },
       currentSettings: () => ({ model: state.choice, layers: wx.settings() }),
+      // Il diagramma della barca attiva si aggiorna a ogni modifica dei correttivi.
+      preview: (draft) => {
+        const b = activeBoat() ?? boats[0];
+        if (!b) return null;
+        const num = (k) => Number(String(draft[k]).replace(',', '.'));
+        const box = document.createElement('div');
+        box.className = 'profile-chart';
+        const chart = boatChart(b, {
+          upwind_eff_pct: num('upwind_eff_pct'),
+          downwind_eff_pct: num('downwind_eff_pct'),
+          white_downwind_pct: num('white_downwind_pct'),
+          split_twa_deg: num('split_twa_deg'),
+        });
+        if (!chart) return null;
+        box.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: `${it.chart.of} ${b.name}` }), chart);
+        return box;
+      },
     });
   });
 

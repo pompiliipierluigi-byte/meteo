@@ -214,6 +214,12 @@ export const it = {
       settings: 'Preferenze',
     },
   },
+  chart: {
+    full: 'full',
+    white: 'vele bianche',
+    tws: 'TWS',
+    of: 'Diagramma polare con questi correttivi:',
+  },
   panel: {
     back: 'Indietro',
     close: 'Chiudi',

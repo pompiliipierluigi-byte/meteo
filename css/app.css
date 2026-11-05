@@ -502,3 +502,11 @@ button {
 .pt-mini:hover { color: #a3150f; }
 .badge-active { background: #e3f4e6; color: #1d6b32; font-weight: 600; padding: 0.3rem 0.6rem; }
 .profile-preview:empty { display: none; }
+
+/* Diagramma polare */
+.polar-chart-box { width: 100%; max-width: 26rem; }
+.polar-chart { width: 100%; height: auto; display: block; }
+.pc-grid { fill: none; stroke: #cfd8e1; stroke-width: 1; }
+.pc-label { font-size: 9px; fill: var(--c-muted); font-family: system-ui, sans-serif; }
+.pc-bold { font-weight: 700; fill: var(--c-fg); }
+.profile-chart { display: flex; flex-direction: column; gap: 0.2rem; }
