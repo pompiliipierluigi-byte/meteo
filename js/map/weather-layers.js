@@ -3,11 +3,10 @@
 import { ensurePane } from './canvas-layer.js';
 import { windFieldLayer } from './wind-field.js';
 import { windArrowsLayer } from './wind-arrows.js';
-import { windParticlesLayer } from './wind-particles.js';
 import { waveFieldLayer, waveArrowsLayer } from './wave-layer.js';
 import { currentLayer } from './current-layer.js';
 
-/** @typedef {'windField' | 'windArrows' | 'windParticles' | 'waveArrows' | 'wavePeriods' | 'currents'} ToggleId */
+/** @typedef {'windField' | 'windArrows' | 'waveArrows' | 'wavePeriods' | 'currents'} ToggleId */
 /** @typedef {'none' | import('./wave-layer.js').WaveKind} WaveChoice */
 
 /**
@@ -15,7 +14,6 @@ import { currentLayer } from './current-layer.js';
  * @typedef {Object} LayerSettings
  * @property {boolean} windField
  * @property {boolean} windArrows
- * @property {boolean} windParticles
  * @property {WaveChoice} wave
  * @property {boolean} waveArrows
  * @property {boolean} wavePeriods
@@ -23,16 +21,18 @@ import { currentLayer } from './current-layer.js';
  * @property {number} opacity
  */
 
+/** Versione delle impostazioni salvate (2 = senza particelle, opacità piena). */
+const LAYER_SETTINGS_VERSION = 2;
+
 /** @type {LayerSettings} */
 export const DEFAULT_LAYER_SETTINGS = {
   windField: true,
-  windArrows: false,
-  windParticles: true,
+  windArrows: true,
   wave: 'none',
   waveArrows: true,
   wavePeriods: false,
   currents: false,
-  opacity: 0.6,
+  opacity: 1,
 };
 
 /**
@@ -42,18 +42,21 @@ export const DEFAULT_LAYER_SETTINGS = {
  */
 export function createWeatherLayers(map, saved, onChange) {
   const fieldPane = ensurePane(map, 'wxField', 350);
-  const particlesPane = ensurePane(map, 'wxParticles', 380);
   const arrowsPane = ensurePane(map, 'wxArrows', 390);
 
+  // Impostazioni salvate prima della 1.7 (particelle, opacità 60 %): si ripartisce dai nuovi default
+  // (frecce e campo colorato al massimo, niente particelle: troppo pesanti sul telefono).
+  const fresh = saved && saved.v === LAYER_SETTINGS_VERSION;
   /** @type {LayerSettings} */
-  const st = { ...DEFAULT_LAYER_SETTINGS, ...saved };
+  const st = { ...DEFAULT_LAYER_SETTINGS, ...(fresh ? saved : { wave: saved?.wave, waveArrows: saved?.waveArrows, wavePeriods: saved?.wavePeriods, currents: saved?.currents }) };
+  for (const k of Object.keys(st)) if (st[k] === undefined) st[k] = DEFAULT_LAYER_SETTINGS[k];
+  delete st.windParticles;
   if (!['none', 'wave', 'wwave', 'swell'].includes(st.wave)) st.wave = 'none';
 
   const kind = st.wave === 'none' ? 'wave' : st.wave;
   const layers = {
     waveField: waveFieldLayer({ pane: fieldPane, opacity: st.opacity, kind }),
     windField: windFieldLayer({ pane: fieldPane, opacity: st.opacity }),
-    windParticles: windParticlesLayer({ pane: particlesPane }),
     waveArrows: waveArrowsLayer({ pane: arrowsPane, kind }),
     windArrows: windArrowsLayer({ pane: arrowsPane }),
     currents: currentLayer({ pane: arrowsPane }),
@@ -92,12 +95,10 @@ export function createWeatherLayers(map, saved, onChange) {
     const k = st.wave === 'none' ? 'wave' : st.wave;
     layers.waveField.options.kind = k;
     Object.assign(layers.waveArrows.options, { kind: k, arrows: st.waveArrows, periods: st.wavePeriods });
-    // Sopra un campo colorato le particelle sono bianche, altrimenti colorate per intensità.
-    layers.windParticles.setColored(!st.windField && st.wave === 'none');
   }
 
   const all = () => /** @type {(keyof typeof layers)[]} */ (Object.keys(layers)).forEach(refresh);
-  const changed = () => onChange({ ...st });
+  const changed = () => onChange({ ...st, v: LAYER_SETTINGS_VERSION });
   applyOptions();
 
   return {

@@ -1,4 +1,4 @@
-// Rotta calcolata sulla mappa: traccia (vela/motore), tratti con avvisi, isocrone facoltative,
+// Rotta calcolata sulla mappa: traccia (vela/motore), tratti con avvisi,
 // punti orari con etichette e posizione della barca all'ora del cursore.
 
 import { formatShortDateTime, localHour } from '../lib/format.js';
@@ -14,7 +14,6 @@ const WARN = '#e8590c';
  */
 export function createRouteLayer(map, L) {
   const group = L.layerGroup().addTo(map);
-  const isoGroup = L.layerGroup();
   /** @type {import('../../vendor/leaflet/leaflet-src.esm.js').Marker | null} */
   let boat = null;
   /** @type {import('../routing/isochrone.js').TrackPoint[]} */
@@ -23,10 +22,9 @@ export function createRouteLayer(map, L) {
   const boatIcon = L.divIcon({ className: 'route-boat', html: '<span>⛵</span>', iconSize: [26, 26], iconAnchor: [13, 13] });
 
   /**
-   * @param {{track: import('../routing/isochrone.js').TrackPoint[], isochrones?: [number, number][][]}} result
-   * @param {{showIsochrones?: boolean}} [opts]
+   * @param {{track: import('../routing/isochrone.js').TrackPoint[]}} result
    */
-  function show(result, opts = {}) {
+  function show(result) {
     clear();
     track = result.track;
     // Tratti consecutivi con lo stesso stato (vela/motore, avviso) in un'unica polilinea.
@@ -64,23 +62,8 @@ export function createRouteLayer(map, L) {
     L.circleMarker([end.lat, end.lon], { radius: 5, color: '#fff', weight: 2, fillColor: '#b3261e', fillOpacity: 1 })
       .bindTooltip(formatShortDateTime(end.t), { permanent: true, direction: 'top', className: 'route-eta' })
       .addTo(group);
-    if (result.isochrones?.length) {
-      for (const iso of result.isochrones) {
-        if (iso.length > 1) {
-          // Punti dell'isocrona ordinati per angolo dalla partenza, per una linea leggibile.
-          const s0 = track[0];
-          const pts = [...iso].sort((p, q) => Math.atan2(p[1] - s0.lon, p[0] - s0.lat) - Math.atan2(q[1] - s0.lon, q[0] - s0.lat));
-          L.polyline(pts, { color: '#5b6878', weight: 1, opacity: 0.5, interactive: false }).addTo(isoGroup);
-        }
-      }
-    }
-    setIsochrones(Boolean(opts.showIsochrones));
   }
 
-  /** @param {boolean} on */
-  function setIsochrones(on) {
-    if (on) isoGroup.addTo(map); else map.removeLayer(isoGroup);
-  }
 
   /**
    * Posizione stimata della barca all'istante dato (interpolata lungo la traccia).
@@ -109,7 +92,6 @@ export function createRouteLayer(map, L) {
 
   function clear() {
     group.clearLayers();
-    isoGroup.clearLayers();
     if (boat) {
       map.removeLayer(boat);
       boat = null;
@@ -122,5 +104,5 @@ export function createRouteLayer(map, L) {
     if (track.length) map.fitBounds(track.map((p) => [p.lat, p.lon]), { padding: [30, 30] });
   }
 
-  return { show, clear, setIsochrones, setTime, fit };
+  return { show, clear, setTime, fit };
 }

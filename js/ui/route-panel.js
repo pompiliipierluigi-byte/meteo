@@ -112,7 +112,6 @@ export function createRoutePanel(host, topbar, points, deps) {
   // --- Opzioni di calcolo -------------------------------------------------------
   /** @type {'full' | 'white'} */
   let sails = 'full';
-  let showIso = false;
   /** @type {string | null} */
   let boatId = null;
   /** Correttivi modificati qui (valgono per il calcolo; "Salva nel profilo" li rende permanenti). */
@@ -183,14 +182,7 @@ export function createRoutePanel(host, topbar, points, deps) {
     }, 'btn-small'));
     optionsBox.append(det);
 
-    const iso = input('iso', '', { type: 'checkbox', checked: showIso });
-    iso.addEventListener('change', () => {
-      showIso = iso.checked;
-      deps.layer.setIsochrones(showIso);
-    });
-    const isoRow = el('label', 'opt-row');
-    isoRow.append(iso, el('span', '', t.showIso));
-    optionsBox.append(isoRow);
+    // Isocrone non mostrate: troppo pesanti da disegnare sul telefono (2026-11-05).
   }
 
   // --- Calcolo --------------------------------------------------------------------
@@ -269,13 +261,13 @@ export function createRoutePanel(host, topbar, points, deps) {
         coastMarginNm: Number(prof.coast_margin_nm),
         coastWarningNm: Number(prof.coast_warning_nm),
         waveWarningM: Number(prof.wave_warning_m),
-        keepIsochrones: true,
+        keepIsochrones: false,
       };
       setBar(0.5, t.computing);
       const t0 = performance.now();
       const res = await deps.routing.route(request, { wind: weather.wind.field, marine: weather.marine }, (f) => setBar(0.5 + f * 0.5, `${t.computing} ${Math.round(f * 100)} %`));
       const secs = (performance.now() - t0) / 1000;
-      deps.layer.show(res, { showIsochrones: showIso });
+      deps.layer.show(res);
       deps.layer.setTime(deps.context().tMs);
       deps.layer.fit();
       renderResult(res, { boat, sails, weather, secs });

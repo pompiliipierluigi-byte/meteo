@@ -268,7 +268,7 @@ function start() {
   const waveNames = { wave: it.layers.waveTotal, wwave: it.layers.waveWind, swell: it.layers.waveSwell };
   /** @param {import('./map/weather-layers.js').LayerSettings} s */
   const updateLegend = (s) => legend.update({
-    wind: s.windField || s.windArrows || (s.windParticles && !s.windField && s.wave === 'none'),
+    wind: s.windField || s.windArrows,
     wave: s.wave === 'none' ? null : waveNames[s.wave],
     current: s.currents,
   });
@@ -280,7 +280,7 @@ function start() {
   updateLegend(ls);
 
   const windSec = menu.addSection(it.layers.wind);
-  for (const id of /** @type {const} */ (['windField', 'windArrows', 'windParticles'])) {
+  for (const id of /** @type {const} */ (['windField', 'windArrows'])) {
     checkbox(windSec, it.layers[id], ls[id], (on) => wx.setToggle(id, on));
   }
   const waveSec = menu.addSection(it.layers.wave);
