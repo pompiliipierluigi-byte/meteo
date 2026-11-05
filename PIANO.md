@@ -93,6 +93,17 @@ Riferimenti: [SPEC.md](SPEC.md) per i requisiti, [CLAUDE.md](CLAUDE.md) per conv
 
 **Decisioni di riferimento**: 16, 22.
 
+**Da riprendere (aperti al termine della fase 3, 2026-11-05)**
+- Testo della modale di avviso (SPEC §2.8): dice che le correnti "non sono considerate", ma dalla fase 3 lo sono → nuovo testo da concordare, poi incrementare `disclaimer.version` in `js/i18n/it.js`.
+- Verifica su smartphone del tempo di calcolo di una rotta (voce "calcolo in … s" nel riepilogo; obiettivo < 3 s per ~100 NM).
+- Barbe meteorologiche del vento al posto delle frecce (o come opzione): da chiedere.
+- Ramo `claude/fase-3-routing-wip` su GitHub da eliminare (a mano).
+
+**Note per lo sviluppo**
+- Dall'ambiente di sviluppo Open-Meteo, Supabase, CARTO e osmdata non sono raggiungibili: le prove nel browser usano dati simulati (Playwright `page.route`); per scaricare dati esterni si usa GitHub Actions (es. `.github/workflows/coastline.yml`).
+- Quota Open-Meteo: limitatore a 300 chiamate/min (`js/weather/rate-limit.js`); la finestra di partenza deve riusare lo stesso meteo di corridoio per i 24 run, senza nuove richieste.
+- Migrazioni: provarle con `sh supabase/tests/run-local.sh` (PostgreSQL locale con schema `auth` simulato) prima di farle eseguire nel SQL Editor di Supabase.
+
 **Passi**
 1. Migrazione SQL: tabella `routes` + RLS: `supabase/migrations/0002_routes.sql`.
 2. Esecuzione dei 24 run nel worker (eventuale pool da 2), avanzamento, annulla: `js/routing/departure-window.js`.
