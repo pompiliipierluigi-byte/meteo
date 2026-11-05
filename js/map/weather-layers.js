@@ -22,8 +22,8 @@ import { currentLayer } from './current-layer.js';
  * @property {number} opacity
  */
 
-/** Versione delle impostazioni salvate (2 = senza particelle, opacità piena). */
-const LAYER_SETTINGS_VERSION = 2;
+/** Versione delle impostazioni salvate (2 = senza particelle; 3 = opacità di default al 50 %). */
+const LAYER_SETTINGS_VERSION = 3;
 
 /** @type {LayerSettings} */
 export const DEFAULT_LAYER_SETTINGS = {
@@ -34,7 +34,8 @@ export const DEFAULT_LAYER_SETTINGS = {
   waveArrows: true,
   wavePeriods: false,
   currents: false,
-  opacity: 1,
+  // 50 %: la mappa sotto (costa, porti) resta leggibile (2026-11-05).
+  opacity: 0.5,
 };
 
 /**
@@ -48,9 +49,14 @@ export function createWeatherLayers(map, saved, onChange) {
 
   // Impostazioni salvate prima della 1.7 (particelle, opacità 60 %): si ripartisce dai nuovi default
   // (frecce e campo colorato al massimo, niente particelle: troppo pesanti sul telefono).
+  // Impostazioni della 1.7–1.8 (v2): si tiene tutto tranne l'opacità, che torna al nuovo default.
   const fresh = saved && saved.v === LAYER_SETTINGS_VERSION;
+  const v2 = saved && saved.v === 2;
   /** @type {LayerSettings} */
-  const st = { ...DEFAULT_LAYER_SETTINGS, ...(fresh ? saved : { wave: saved?.wave, waveArrows: saved?.waveArrows, wavePeriods: saved?.wavePeriods, currents: saved?.currents }) };
+  const st = {
+    ...DEFAULT_LAYER_SETTINGS,
+    ...(fresh ? saved : v2 ? { ...saved, opacity: undefined } : { wave: saved?.wave, waveArrows: saved?.waveArrows, wavePeriods: saved?.wavePeriods, currents: saved?.currents }),
+  };
   for (const k of Object.keys(st)) if (st[k] === undefined) st[k] = DEFAULT_LAYER_SETTINGS[k];
   delete st.windParticles;
   if (!['none', 'wave', 'wwave', 'swell'].includes(st.wave)) st.wave = 'none';
