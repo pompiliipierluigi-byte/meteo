@@ -77,4 +77,9 @@ jobs:
             exit 0
           fi
           git commit -m "Fase 3.1: tasselli linea di costa OSM (generati da .github/workflows/coastline.yml)" -m "$(cat source.txt)"
-          git push
+          # Il ramo può aver ricevuto altri commit durante l'esecuzione.
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep 5
+          done
+          exit 1
