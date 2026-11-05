@@ -91,3 +91,15 @@ sh supabase/tests/run-local.sh
 
 Crea un database temporaneo con un'imitazione dello schema `auth` di Supabase (`tests/auth-stub.sql`),
 applica le migrazioni ed esegue i controlli di trigger e RLS con due utenti e il ruolo anon (`tests/rls.sql`).
+
+## Verifica della RLS sul progetto reale
+
+Con due account di prova già confermati (A e B), da un computer con Node ≥ 18:
+
+```sh
+SB_URL=https://<id-progetto>.supabase.co SB_KEY=sb_publishable_… \
+A_EMAIL=… A_PASSWORD=… B_EMAIL=… B_PASSWORD=… node supabase/tests/rls-rest-check.mjs
+```
+
+Crea una barca di prova con A, controlla con chiamate REST dirette che B e i visitatori senza login non la vedano
+né la modifichino, poi la elimina.
