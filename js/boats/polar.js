@@ -174,6 +174,8 @@ export function optimalAngles(p, twsKn) {
 /**
  * Velocità a vela della polare (senza correttivi) con zona morta: 0 sotto l'angolo di bolina ottimo;
  * tra l'angolo di bolina e la prima riga della tabella, lineare tra il punto di bolina e la tabella.
+ * Oltre l'ultima riga (es. le tabelle ORC finiscono a 150°): se il punto di poppa ottimo è più largo,
+ * lineare fino a quel punto e poi a VMG di poppa costante fino a 180°; altrimenti valore dell'ultima riga.
  * @param {Polar} p
  * @param {number} twaDeg qualsiasi (ripiegato su 0–180)
  * @param {number} twsKn
@@ -190,6 +192,16 @@ export function polarBsp(p, twaDeg, twsKn) {
     const k = (twa - opt.beatTwa) / (first - opt.beatTwa);
     const v = opt.beatBsp + ((isNum(atFirst) ? atFirst : opt.beatBsp) - opt.beatBsp) * k;
     return Math.max(0, v);
+  }
+  const last = p.twa[p.twa.length - 1];
+  if (twa > last && opt.runTwa > last && opt.runTwa < 180 && isNum(opt.runBsp)) {
+    if (twa <= opt.runTwa) {
+      const atLast = tableBsp(p, last, twsKn);
+      const k = (twa - last) / (opt.runTwa - last);
+      return Math.max(0, (isNum(atLast) ? atLast : opt.runBsp) + (opt.runBsp - (isNum(atLast) ? atLast : opt.runBsp)) * k);
+    }
+    const rad = (d) => (d * Math.PI) / 180;
+    return Math.max(0, (opt.runBsp * Math.cos(rad(180 - opt.runTwa))) / Math.cos(rad(180 - twa)));
   }
   const v = tableBsp(p, twa, twsKn);
   return isNum(v) ? Math.max(0, v) : 0;

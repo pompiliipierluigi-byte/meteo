@@ -39,7 +39,7 @@ test('nessun percorso assoluto verso il proprio sito', () => {
     const text = readFileSync(f, 'utf8');
     assert.ok(!/(src|href)=["']\//.test(text), `${f}: src/href assoluto`);
     assert.ok(!/from ['"]\//.test(text), `${f}: import assoluto`);
-    assert.ok(!/github\.io/.test(text), `${f}: URL del sito`);
+    assert.ok(!/pompiliipierluigi-byte\.github\.io/.test(text), `${f}: URL del sito`);
   }
 });
 
