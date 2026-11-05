@@ -29,7 +29,11 @@ export const HORIZON_H = 120;
 export const CARTO_BASEMAPS_KEY = 'cb1_52ji_1_36a0d8b38bab12caa7225495';
 
 /** Supabase (fase 2). */
-export const SUPABASE = Object.freeze({ url: '', anonKey: '' });
+export const SUPABASE = Object.freeze({
+  url: 'https://athokhwpylevhhczuytv.supabase.co',
+  // Chiave publishable: pubblica per costruzione, i dati sono protetti dalla RLS.
+  anonKey: 'sb_publishable_yyKxrKeFA2OvzmPMP4Gkpg_wb3ykqF4',
+});
 
 /** Open-Meteo: endpoint e parametri delle richieste. */
 export const OPEN_METEO = Object.freeze({
