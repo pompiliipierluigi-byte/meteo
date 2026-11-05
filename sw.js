@@ -2,7 +2,7 @@
 // Percorsi relativi allo scope (sottopercorso /meteo/ su GitHub Pages).
 // I dati meteo non passano da qui: sono in IndexedDB (js/weather/cache.js), consultabili offline.
 
-const VERSION = '1.7';
+const VERSION = '1.9';
 const SHELL_CACHE = `shell-${VERSION}`;
 /** Cache delle tile (conservata tra le versioni), con numero massimo di elementi. */
 // v2: scarta le tile CARTO "API KEY REQUIRED" salvate dalla v1.
@@ -37,6 +37,7 @@ const SHELL = [
   './js/lib/idb.js',
   './js/lib/format.js',
   './js/lib/text.js',
+  './js/lib/astro.js',
   './js/weather/models.js',
   './js/weather/weather-service.js',
   './js/ui/notice.js',
@@ -47,12 +48,15 @@ const SHELL = [
   './js/map/weather-layers.js',
   './js/map/wind-field.js',
   './js/map/wind-arrows.js',
+  './js/map/wind-barbs.js',
   './js/map/wave-layer.js',
   './js/ui/legend.js',
   './js/ui/probe.js',
   './js/data/supabase.js',
   './js/data/boats-repo.js',
   './js/data/profile-repo.js',
+  './js/data/routes-repo.js',
+  './js/data/places-repo.js',
   './js/boats/polar.js',
   './js/boats/polar-csv.js',
   './js/boats/orc.js',
@@ -63,8 +67,11 @@ const SHELL = [
   './js/routing/run.js',
   './js/routing/worker.js',
   './js/routing/client.js',
+  './js/routing/departure-window.js',
+  './js/routing/departure-categories.js',
   './js/weather/corridor.js',
   './js/map/current-layer.js',
+  './js/map/sst-layer.js',
   './js/map/route-layer.js',
   './js/ui/auth.js',
   './js/ui/panel.js',
@@ -74,6 +81,14 @@ const SHELL = [
   './js/ui/polar-chart.js',
   './js/ui/route-points.js',
   './js/ui/route-panel.js',
+  './js/ui/window-chart.js',
+  './js/ui/routes-panel.js',
+  './js/ui/almanac-panel.js',
+  './js/ui/place-picker.js',
+  './js/ui/places-panel.js',
+  './js/places/search.js',
+  './data/places/ports.json',
+  './js/weather/tides.js',
   './vendor/supabase/supabase.js',
   './vendor/leaflet/leaflet-src.esm.js',
   './vendor/leaflet/leaflet.css',

@@ -46,6 +46,9 @@ export const ROUTE_MARINE_VARS = ['wave_height', 'wave_direction', 'wave_period'
 /** Variabili correnti per il layer sulla mappa. */
 export const CURRENT_VARS = ['ocean_current_velocity', 'ocean_current_direction'];
 
+/** Temperatura superficiale del mare (°C) per il layer sulla mappa. */
+export const SST_VARS = ['sea_surface_temperature'];
+
 /** km/h → nodi (la Marine API dà le correnti in km/h). */
 export const KMH_TO_KN = 1 / 1.852;
 
@@ -270,6 +273,30 @@ export async function fetchLastRunMs(kind, metaId, opts = {}) {
 /**
  * Campo marino per il routing: onda totale (wave_h, wave_per, wave_dx, wave_dy) e corrente
  * (cur_u, cur_v in nodi, verso cui va: est, nord). Le variabili assenti restano NaN.
+ * @param {import('./grid.js').GridSpec} grid
+ * @param {number[]} indices
+ * @param {{timesMs: number[], series: Record<string, (number|null)[][]>}} data
+ * @returns {import('./grid.js').WeatherField}
+ */
+/**
+ * Campo temperatura del mare (°C).
+ * @param {import('./grid.js').GridSpec} grid
+ * @param {number[]} indices
+ * @param {{timesMs: number[], series: Record<string, (number|null)[][]>}} data
+ * @returns {import('./grid.js').WeatherField}
+ */
+export function sstField(grid, indices, data) {
+  const f = emptyField(grid, data.timesMs, ['sst']);
+  const plane = grid.nx * grid.ny;
+  const s = data.series.sea_surface_temperature;
+  indices.forEach((idx, k) => {
+    for (let t = 0; t < data.timesMs.length; t++) f.vars.sst[t * plane + idx] = num(s?.[k]?.[t]);
+  });
+  return f;
+}
+
+/**
+ * Campo marino del corridoio (onda totale e corrente).
  * @param {import('./grid.js').GridSpec} grid
  * @param {number[]} indices
  * @param {{timesMs: number[], series: Record<string, (number|null)[][]>}} data

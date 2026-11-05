@@ -1,5 +1,6 @@
 // Avviso di sicurezza: modale al primo avvio (per versione del testo) e barra fissa.
-// L'avviso non va mai rimosso o nascosto (CLAUDE.md, SPEC §2.8).
+// La barra si può chiudere con ✕ fino al prossimo avvio (richiesta del 2026-11-05: ruba spazio);
+// l'avviso resta nel riepilogo della rotta, nella finestra di partenza e nel menu (CLAUDE.md, SPEC §2.8).
 
 import { it } from '../i18n/it.js';
 
@@ -70,7 +71,18 @@ export function initDisclaimer(bar) {
   link.className = 'link-btn';
   link.textContent = t.showAgain;
   link.addEventListener('click', () => showDisclaimerModal());
-  el.append(text, link);
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'disclaimer-close';
+  close.textContent = '✕';
+  close.setAttribute('aria-label', t.hideBar);
+  close.title = t.hideBar;
+  // Solo in memoria: al prossimo avvio la barra ricompare.
+  close.addEventListener('click', () => {
+    el.classList.add('hidden');
+    window.dispatchEvent(new Event('resize'));
+  });
+  el.append(text, link, close);
   bar.prepend(el);
 
   if (acceptedVersion() >= t.version) return Promise.resolve();

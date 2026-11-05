@@ -26,7 +26,7 @@ import { formatDateTime, formatLatLon, formatDeg, compass16, formatShortDateTime
  * @param {number} tMs
  * @returns {ProbeValues}
  */
-export function probeValues(wind, waves, lat, lon, tMs) {
+export function probeValues(wind, waves, lat, lon, tMs, sst = null) {
   let windKn = NaN;
   let windFromDeg = NaN;
   let gustKn = NaN;
@@ -67,6 +67,7 @@ export function probeValues(wind, waves, lat, lon, tMs) {
   });
   return {
     windKn, windFromDeg, gustKn, waves: list, model,
+    sstC: sst ? sample(sst.field, 'sst', lat, lon, tMs) : NaN,
     runMs: model && wind ? wind.runs[model] ?? null : null,
   };
 }
@@ -92,6 +93,7 @@ function render(p, lat, lon, tMs, waveRunMs) {
     ...p.waves.map((w) => [names[w.key], Number.isFinite(w.heightM)
       ? `<b>${fmtNum(w.heightM, 1)} m</b> ${dirText(w.fromDeg)}${Number.isFinite(w.periodS) ? ` · ${fmtNum(w.periodS, 0)} s` : ''}`
       : t.noData]),
+    ...(Number.isFinite(p.sstC) ? [[t.sst, `${fmtNum(p.sstC, 1)} °C`]] : []),
   ];
   const model = p.model
     ? `${modelLabel(p.model)}${p.runMs ? ` (run ${formatShortDateTime(p.runMs)})` : ''}`
@@ -103,6 +105,7 @@ function render(p, lat, lon, tMs, waveRunMs) {
       <div class="probe-time">${formatDateTime(tMs)}</div>
       <table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>
       <div class="probe-model">${t.model}: ${model}; ${t.waveModel}: ${wave}</div>
+      <button type="button" class="link-btn probe-alm">☀️🌙 ${it.almanac.openHere}</button>
     </div>`;
 }
 
@@ -110,11 +113,12 @@ function render(p, lat, lon, tMs, waveRunMs) {
  * Collega la sonda alla mappa.
  * @param {import('../../vendor/leaflet/leaflet-src.esm.js').Map} map
  * @param {typeof import('../../vendor/leaflet/leaflet-src.esm.js')} L
- * @param {() => {wind: import('../weather/weather-service.js').WindResult | null, waves: import('../weather/weather-service.js').WaveResult | null, tMs: number}} getState
+ * @param {() => {wind: import('../weather/weather-service.js').WindResult | null, waves: import('../weather/weather-service.js').WaveResult | null, sst?: import('../weather/weather-service.js').WaveResult | null, tMs: number}} getState
  * @param {() => boolean} [ignoreClick] true = il tocco serve ad altro (es. scelta di un punto della rotta)
+ * @param {(lat: number, lon: number) => void} [onAlmanac] apre sole, luna e maree nel punto
  * @returns {{refresh: () => void}} aggiorna il popup aperto (cambio di ora o di dati)
  */
-export function initProbe(map, L, getState, ignoreClick) {
+export function initProbe(map, L, getState, ignoreClick, onAlmanac) {
   const popup = L.popup({ maxWidth: 320, autoPanPaddingTopLeft: [10, 60], className: 'probe-popup', closeButton: true });
   /** @type {{lat: number, lng: number} | null} */
   let at = null;
@@ -122,7 +126,7 @@ export function initProbe(map, L, getState, ignoreClick) {
     if (!at) return;
     const s = getState();
     const html = s.wind || s.waves
-      ? render(probeValues(s.wind, s.waves, at.lat, at.lng, s.tMs), at.lat, at.lng, s.tMs, s.waves?.runMs ?? null)
+      ? render(probeValues(s.wind, s.waves, at.lat, at.lng, s.tMs, s.sst ?? null), at.lat, at.lng, s.tMs, s.waves?.runMs ?? null)
       : `<div class="probe">${it.probe.noWeather}</div>`;
     popup.setContent(html);
   };
@@ -134,5 +138,11 @@ export function initProbe(map, L, getState, ignoreClick) {
     popup.openOn(map);
   });
   popup.on('remove', () => { at = null; });
+  map.getContainer().addEventListener('click', (e) => {
+    if (!(/** @type {HTMLElement} */ (e.target).closest?.('.probe-alm')) || !at) return;
+    const { lat, lng } = at;
+    map.closePopup(popup);
+    onAlmanac?.(lat, lng);
+  });
   return { refresh: update };
 }

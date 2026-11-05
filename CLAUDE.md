@@ -4,7 +4,7 @@ Istruzioni per chi sviluppa in questo repository (persone e agenti). Requisiti i
 
 ## Progetto
 
-PWA di weather routing per barca a vela in Adriatico (lat 39.8–45.8, lon 12.0–19.7). Strumento di **pianificazione, non di sicurezza**: l'avviso nell'app non va mai rimosso o nascosto.
+PWA di weather routing per barca a vela in Adriatico (lat 39.8–45.8, lon 12.0–19.7). Strumento di **pianificazione, non di sicurezza**: l'avviso nell'app non va mai rimosso. Unica eccezione (decisa il 2026-11-05): la barra in basso si chiude con ✕ fino al prossimo avvio; modale al primo avvio, avviso nel riepilogo rotta e nella finestra e voce nel menu restano sempre.
 
 ## Stack
 
@@ -58,10 +58,12 @@ js/
   weather/           Open-Meteo, griglie, cache, modelli, corridoio
   boats/             polari, CSV, importazione ORC
   routing/           geodesia, terra, interpolazione, isocrone, worker, finestra
-  data/              Supabase e repository (boats, routes)
+  places/            ricerca di porti e località
+  data/              Supabase e repository (boats, routes, places)
   ui/                pannelli, cursore, sonda, grafici, avviso
 data/
   coastline/         linea di costa OSM ritagliata e semplificata
+  places/            porti e marine (ports.json)
 vendor/
   leaflet/
   supabase/
@@ -69,6 +71,7 @@ supabase/
   migrations/        SQL versionato (0001_init.sql, …)
 tools/
   coastline/         procedura di preparazione (non eseguita dall'app)
+  places/            coordinate dei porti portate in acqua libera
 tests/               test Node dei moduli puri
 SPEC.md  PIANO.md  CLAUDE.md  README.md
 ```

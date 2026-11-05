@@ -92,3 +92,16 @@ export const CURRENT_STOPS = [
 ];
 
 export const currentRamp = colorRamp(CURRENT_STOPS, 0.02);
+
+/** Scala temperatura del mare: 10–28 °C (Adriatico: ~9 °C d'inverno al nord, ~28 °C d'estate). @type {ColorStop[]} */
+export const SST_STOPS = [
+  [10, [60, 70, 170]],
+  [13, [50, 120, 210]],
+  [16, [60, 175, 200]],
+  [19, [90, 190, 120]],
+  [22, [230, 210, 70]],
+  [25, [240, 140, 50]],
+  [28, [205, 45, 50]],
+];
+
+export const sstRamp = colorRamp(SST_STOPS, 0.05);

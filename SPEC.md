@@ -36,8 +36,8 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 
 ### 2.2 Layer vento
 
-- ~~Particelle animate~~: tolte il 2026-11-05 su richiesta (troppo pesanti sul telefono); restano frecce e campo colorato, con opacità di default al 100 %.
-- **Frecce/barbe** su griglia regolare, diradate in base allo zoom, colorate con la stessa scala.
+- ~~Particelle animate~~: tolte il 2026-11-05 su richiesta (troppo pesanti sul telefono); restano frecce e campo colorato; opacità di default al 50 % (dal 100 %, 2026-11-05: la mappa sotto deve restare leggibile).
+- **Frecce** (default) o **barbe meteorologiche** (opzione nel menu, 2026-11-05) su griglia regolare, diradate in base allo zoom, colorate con la stessa scala. Barbe: asta verso la provenienza, alette sul lato orario, pennone 50 kn, aletta 10 kn, mezza aletta 5 kn, cerchio sotto 2.5 kn.
 - **Campo colorato** (heatmap) di intensità, opacità regolabile.
 - Scala colori in nodi, con legenda: 0–5–10–15–20–25–30–35+ kn.
 - Ogni sotto-layer attivabile singolarmente.
@@ -49,6 +49,10 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Periodo (s) visibile nella sonda e, opzionalmente, come etichette su griglia diradata.
 - Tre layer attivabili dal menu: **onda totale**, **onda da vento**, **swell** (ciascuno con altezza, direzione, periodo).
 - Layer **correnti** superficiali (velocità in nodi e direzione di destinazione), da fase 3.
+
+### 2.3.1 Temperatura del mare
+
+- Layer facoltativo (2026-11-05): temperatura superficiale del mare (°C) da Open-Meteo Marine (`sea_surface_temperature`), sulla griglia panoramica, scaricata solo quando il layer è attivo; scala 10–28 °C con legenda; valore nella sonda.
 
 ### 2.4 Cursore temporale e modello
 
@@ -109,14 +113,21 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Le partenze oltre i limiti impostati sono segnate come "fuori limite".
 - Tocco su una colonna del grafico → mostra quella rotta su mappa.
 - Run eseguiti nel worker in sequenza (o in un pool di 2 worker se `navigator.hardwareConcurrency ≥ 4`), con avanzamento "n/24".
+- Salvando la rotta di una partenza scelta dalla finestra si salvano anche i riepiloghi delle 24 partenze (senza tracce): riaprendola il grafico torna visibile, la traccia solo per la partenza salvata.
+
+### 2.7.1 Rotte salvate
+
+- "Salva" sotto il riepilogo di una rotta calcolata (nome proposto: partenza → arrivo e data, modificabile).
+- Elenco "📂 Salvate" nel pannello rotta: apri (punti, traccia, riepilogo e tabella come al salvataggio, cursore all'ora di partenza) ed elimina.
+- La rotta salvata contiene la copia di polari, correttivi e parametri: si riapre identica anche se la barca cambia o viene eliminata.
 
 ### 2.8 Avviso di sicurezza
 
 - Al primo avvio: finestra modale da accettare esplicitamente ("Ho capito"), memorizzata in locale con versione del testo.
-- Testo fisso, sempre visibile, nella barra inferiore: *"Solo pianificazione — non usare per la navigazione"*.
+- Testo fisso nella barra inferiore: *"Solo pianificazione — non usare per la navigazione"*; si chiude con ✕ fino al prossimo avvio (2026-11-05: ruba spazio sul telefono). Sempre raggiungibile dal menu (voce "Avviso").
 - Ripetuto nel riepilogo di ogni rotta e nella finestra di partenza.
-- Testo proposto per la modale:
-  > Questa app fornisce stime basate su modelli meteorologici e sulle polari che hai inserito. Le previsioni possono essere sbagliate, la linea di costa è semplificata e non sono considerati fondali, ostacoli, correnti, traffico, zone vietate o condizioni locali. Usala solo per pianificare. Le decisioni in mare spettano allo skipper, sulla base dei bollettini ufficiali e delle carte nautiche.
+- Testo della modale (versione 2, 2026-11-05: le correnti sono nel calcolo dalla fase 3):
+  > Questa app fornisce stime basate su modelli meteorologici e sulle polari che hai inserito. Le previsioni possono essere sbagliate, la linea di costa è semplificata, le correnti sono stimate dal modello e non sono considerati fondali, ostacoli, traffico, zone vietate o condizioni locali. Usala solo per pianificare. Le decisioni in mare spettano allo skipper, sulla base dei bollettini ufficiali e delle carte nautiche.
 
 ### 2.9 Account e dati utente
 
@@ -139,7 +150,30 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Coordinate visualizzate in gradi e minuti decimali (es. `43°30.25'N 016°26.10'E`).
 - Layout mobile-first (uso principale da smartphone/tablet), funzionante anche su desktop.
 
+### 2.12 Sole, luna e maree (fase 5)
+
+- Pagina per una località (porto, località cercata, luogo salvato, centro mappa o GPS) e un giorno (oggi e i successivi 4).
+- Sole: alba e tramonto (orizzonte −0°50′), crepuscolo civile (−6°) e nautico (−12°), mezzogiorno vero e altezza massima.
+- Luna: sorgere e tramonto, fase con percentuale illuminata, date delle prossime fasi principali.
+- Calcolati in locale senza rete (`js/lib/astro.js`, formule a bassa precisione); verificati contro PyEphem: sole entro 0.1 min, luna entro 0.5 min.
+- Maree: §2.13.
+- Accesso: menu ☰ → "Sole, luna e maree" (centro mappa) o tocco sulla mappa → sonda → "Sole, luna e maree qui".
+
+### 2.13 Maree
+
+- Livello del mare previsto per la località da Open-Meteo Marine (`sea_level_height_msl`, rispetto al medio mare: marea astronomica + effetto di vento e pressione), modello a ~8 km; serie oraria di 5–6 giorni.
+- Grafico del giorno con alte e basse (estremi della serie oraria raffinati con una parabola) e ora attuale; elenco con orari e livelli.
+- Cache locale di 6 h per località (arrotondata a 0.05°), poi rete; una sola chiamata per località (quota).
+- Avviso: sotto costa, in porto e nelle lagune la previsione può differire molto; non sostituisce le tavole di marea ufficiali (ISPRA).
+
 ---
+
+### 2.14 Località e luoghi salvati
+
+- Campo "Porto o località" nel pannello rotta (pulsanti P / + / A: partenza, waypoint, arrivo) e nella pagina sole/luna/maree.
+- Mentre si scrive: ricerca locale tra i porti inclusi (`data/places/ports.json`, 85 porti e marine di Italia, Slovenia, Croazia, Montenegro e Albania, con i nomi italiani storici come alias: Zara, Spalato, Lussino…) e i luoghi salvati, senza rete. Coordinate in acqua libera vicino al porto (`tools/places/fit-ports.mjs`, ≥ 0.15 NM dalla costa OSM).
+- "Cerca online" (o Invio): Open-Meteo Geocoding, una richiesta per ricerca, solo risultati nell'area dell'app. Il punto si sposta al mare più vicino (entro 5 NM) come i punti toccati sulla mappa.
+- Luoghi salvati e porto base: §4.6.
 
 ## 3. Architettura
 
@@ -286,12 +320,26 @@ Riga creata da trigger su inserimento in `auth.users`.
 | `track` | jsonb | array di punti (§6.6) |
 | `duration_h`, `distance_nm`, `motor_h` | numeric | riepilogo |
 | `max_tws_kn`, `max_gust_kn`, `max_wave_m` | numeric | riepilogo |
-| `window` | jsonb | nullable — risultati della finestra di partenza (24 riepiloghi, senza tracce) |
-| `created_at` | timestamptz | |
+| `departure_window` | jsonb | nullable — risultati della finestra di partenza (24 riepiloghi, senza tracce); non `window`, parola riservata in SQL |
+| `created_at`, `updated_at` | timestamptz | |
+
+### 4.6 `places` (fase 5)
+
+| Campo | Tipo | Vincoli / note |
+|---|---|---|
+| `id` | uuid | PK |
+| `user_id` | uuid | FK, `not null`, default `auth.uid()` |
+| `name` | text | `not null`, 1–100 caratteri |
+| `lat`, `lon` | double precision | `not null` |
+| `note` | text | nullable, max 500 |
+| `is_home` | boolean | porto base, default `false`; al massimo uno per utente (indice unico parziale) |
+| `created_at`, `updated_at` | timestamptz | |
+
+Uso: ★ accanto a un porto, a una località cercata o alla partenza/arrivo della rotta; menu → "Luoghi salvati" per porto base, rinomina ed eliminazione. Il porto base è proposto come partenza (una volta per sessione, se la partenza è vuota) e come località di sole, luna e maree. RLS come §4.5.
 
 ### 4.5 Policy RLS
 
-Per `boats`, `polars`, `routes`:
+Per `boats`, `polars`, `routes`, `places`:
 
 - `select`, `update`, `delete`: `using (user_id = auth.uid())`
 - `insert`, `update`: `with check (user_id = auth.uid())`
@@ -420,7 +468,7 @@ Traccia = array di punti `{t, lat, lon, heading, bsp, cog, sog, tws, twd, twa, g
 
 ### 6.7 Finestra di partenza
 
-- 24 run con t0 = ora intera successiva + k h, k = 0…23; stesso campo meteo caricato una sola volta nel worker.
+- 24 run con t0 = ora intera successiva (all'ora del cursore temporale, se è più avanti) + k h, k = 0…23; stesso campo meteo caricato una sola volta nel worker (in ogni worker del pool); le rotte non trovate (oltre l'orizzonte, costa, limiti) restano visibili come tali.
 - Per ogni run: durata, distanza, ore di motore, ore di bolina (a vela con TWA < `split_twa_deg`), vento/raffica/onda massimi, flag "fuori limite".
 - Categorie, calcolate tra i run non fuori limite:
   - **Speedy**: `duration_h` minima;

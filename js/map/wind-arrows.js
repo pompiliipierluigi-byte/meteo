@@ -1,9 +1,10 @@
-// Frecce del vento su griglia regolare dello schermo (diradate con lo zoom), colorate per intensità.
-// La freccia indica il verso in cui soffia il vento.
+// Frecce (o barbe) del vento su griglia regolare dello schermo (diradate con lo zoom), colorate per
+// intensità. La freccia indica il verso in cui soffia il vento; la barba la provenienza.
 
 import { CanvasLayer } from './canvas-layer.js';
 import { sampler } from '../weather/grid.js';
 import { windRamp, css } from './colors.js';
+import { traceBarb } from './wind-barbs.js';
 
 /** Distanza tra le frecce (pixel CSS). */
 const SPACING_PX = 46;
@@ -36,6 +37,7 @@ export function drawArrow(ctx, x, y, dx, dy, len) {
 
 /**
  * Layer frecce generico: `vector(sample, lat, lon)` → {dx, dy (verso, schermo), mag (per il colore)} | null.
+ * Opzione `symbol`: 'arrows' (default) o 'barbs' (solo vento: `mag` in nodi).
  */
 export const ArrowLayer = CanvasLayer.extend({
   options: { spacing: SPACING_PX, colored: true },
@@ -63,16 +65,29 @@ export const ArrowLayer = CanvasLayer.extend({
         if (!vec) continue;
         const color = this.options.colored ? css(ramp.rgb(vec.mag)) : '#ffffff';
         if (!groups.has(color)) groups.set(color, []);
-        groups.get(color).push([x, y, vec.dx, vec.dy, lengthFn(vec.mag)]);
+        groups.get(color).push([x, y, vec.dx, vec.dy, vec.mag]);
       }
     }
+    const barbs = this.options.symbol === 'barbs';
     // Contorno scuro per la leggibilità su mappa chiara e su heatmap.
     for (const pass of [0, 1]) {
       for (const [color, list] of groups) {
-        ctx.beginPath();
-        for (const [x, y, dx, dy, len] of list) drawArrow(ctx, x, y, dx, dy, len);
         ctx.strokeStyle = pass === 0 ? 'rgba(0,0,0,0.55)' : color;
         ctx.lineWidth = pass === 0 ? 4 : 2;
+        if (barbs) {
+          const stroke = new Path2D();
+          const fill = new Path2D();
+          for (const [x, y, dx, dy, mag] of list) traceBarb(stroke, fill, x, y, dx, dy, mag);
+          ctx.lineJoin = 'round';
+          ctx.stroke(stroke);
+          if (pass === 1) {
+            ctx.fillStyle = color;
+            ctx.fill(fill);
+          }
+          continue;
+        }
+        ctx.beginPath();
+        for (const [x, y, dx, dy, mag] of list) drawArrow(ctx, x, y, dx, dy, lengthFn(mag));
         ctx.stroke();
       }
     }
@@ -80,8 +95,8 @@ export const ArrowLayer = CanvasLayer.extend({
 });
 
 /**
- * Frecce del vento.
- * @param {{pane: string}} opts
+ * Frecce (o barbe) del vento.
+ * @param {{pane: string, symbol?: 'arrows' | 'barbs'}} opts
  */
 export function windArrowsLayer(opts) {
   return new ArrowLayer({

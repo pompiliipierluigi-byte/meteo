@@ -158,3 +158,36 @@ export function downloadText(filename, text, type = 'text/csv') {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * Richiesta di un testo (al posto di prompt()).
+ * @param {string} text
+ * @param {string} value valore proposto
+ * @param {string} okLabel
+ * @returns {Promise<string | null>} null se annullato
+ */
+export function promptBox(text, value, okLabel) {
+  return new Promise((resolve) => {
+    const backdrop = el('div', 'modal-backdrop');
+    const box = el('div', 'modal');
+    box.setAttribute('role', 'dialog');
+    const i = input('prompt', value, { maxLength: 100 });
+    i.className = 'prompt-input';
+    const row = el('div', 'btn-row');
+    const done = (v) => {
+      backdrop.remove();
+      resolve(v);
+    };
+    const ok = btn(okLabel, () => done(i.value.trim() || null), 'btn-primary');
+    row.append(btn(it.panel.cancel, () => done(null)), ok);
+    i.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') ok.click();
+      if (e.key === 'Escape') done(null);
+    });
+    box.append(el('p', '', text), i, row);
+    backdrop.append(box);
+    document.body.append(backdrop);
+    i.focus();
+    i.select();
+  });
+}

@@ -4,9 +4,12 @@
 // Messaggi in ingresso:
 //   {type: 'route', id, request: RouteRequest, weather: {wind, marine}}
 //   {type: 'snap', id, points: [{lat, lon}], offsetNm}  → punti a terra spostati al mare più vicino
+//   {type: 'window', id, request, weather, departures: [{index, departMs}]}  → più run, stesso meteo
 // Messaggi in uscita:
 //   {type: 'progress', id, fraction}
 //   {type: 'result', id, track, summary, isochrones}
+//   {type: 'windowRun', id, index, departMs, track?, summary?, error?: {message, code}}  (uno per run)
+//   {type: 'windowDone', id}
 //   {type: 'snapped', id, points: [{lat, lon, moved, distNm} | null]}
 //   {type: 'error', id, message, code}
 
@@ -96,6 +99,32 @@ self.addEventListener('message', async (e) => {
         },
       });
       self.postMessage({ type: 'result', id: msg.id, ...result });
+      return;
+    }
+    if (msg.type === 'window') {
+      // Finestra di partenza (SPEC §6.7): un run per partenza, terra e meteo caricati una volta sola.
+      await ensureTiles(gridBounds(msg.weather.wind.grid));
+      const n = msg.departures.length;
+      let last = 0;
+      msg.departures.forEach(({ index, departMs }, k) => {
+        let out;
+        try {
+          const r = runRoute({ ...msg.request, departMs, keepIsochrones: false }, msg.weather, land, {
+            onProgress: (f) => {
+              const now = Date.now();
+              if (now - last > 250) {
+                last = now;
+                self.postMessage({ type: 'progress', id: msg.id, fraction: (k + f) / n });
+              }
+            },
+          });
+          out = { track: r.track, summary: r.summary };
+        } catch (err) {
+          out = { error: { message: err?.message ?? String(err), code: err?.code ?? 'error' } };
+        }
+        self.postMessage({ type: 'windowRun', id: msg.id, index, departMs, ...out });
+      });
+      self.postMessage({ type: 'windowDone', id: msg.id });
     }
   } catch (err) {
     self.postMessage({ type: 'error', id: msg.id, message: err?.message ?? String(err), code: err?.code ?? 'error' });

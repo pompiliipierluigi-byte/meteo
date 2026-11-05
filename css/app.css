@@ -78,6 +78,8 @@ button {
   font-weight: 600;
 }
 
+.disclaimer-close { background: none; border: 0; color: inherit; font-size: 1rem; line-height: 1; padding: 0.2rem 0.4rem; opacity: 0.8; cursor: pointer; }
+
 .link-btn {
   background: none;
   border: 0;
@@ -590,6 +592,41 @@ button {
 .progress { position: relative; height: 1.2rem; border-radius: var(--radius); background: #e8eef4; overflow: hidden; }
 .progress-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: #9cc3e4; transition: width 0.2s; }
 .progress-text { position: relative; padding: 0 0.5rem; font-size: 0.72rem; line-height: 1.2rem; }
+.route-window { display: flex; flex-direction: column; gap: 0.4rem; }
+.route-window-title { margin: 0; font-size: 0.9rem; }
+.window-chart-wrap { border: 1px solid var(--c-border); border-radius: var(--radius); padding: 0.2rem; }
+.window-chart { display: block; width: 100%; height: auto; touch-action: manipulation; user-select: none; }
+.window-legend { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; font-size: 0.72rem; color: var(--c-muted); }
+.wl-item { display: inline-flex; align-items: center; gap: 0.25rem; }
+.wl-item i { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; }
+.wl-line i { height: 0.18rem; }
+.window-cats { display: flex; flex-direction: column; gap: 0.25rem; }
+.wc-cat { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.5rem; border: 1px solid var(--c-border); border-radius: var(--radius); background: var(--c-bg); font: inherit; font-size: 0.78rem; text-align: left; cursor: pointer; }
+.wc-cat i { flex: none; width: 0.7rem; height: 0.7rem; border-radius: 50%; }
+.wc-cat strong { flex: none; min-width: 3.4rem; }
+.wc-cat.active { border-color: var(--c-primary); background: #e8f1f8; }
+.wc-cat:disabled { cursor: default; opacity: 0.6; }
+.route-sheet-tools { display: flex; align-items: center; gap: 0.4rem; }
+.route-save { display: flex; flex-direction: column; gap: 0.25rem; }
+.route-save-row { display: flex; gap: 0.4rem; }
+.route-save-row input { flex: 1; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--c-border); border-radius: var(--radius); font: inherit; }
+.routes-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.routes-item { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem; border: 1px solid var(--c-border); border-radius: var(--radius); }
+.routes-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.prompt-input { width: 100%; padding: 0.45rem 0.55rem; margin: 0.3rem 0 0.6rem; border: 1px solid var(--c-border); border-radius: var(--radius); font: inherit; box-sizing: border-box; }
+.place-picker { display: flex; flex-direction: column; gap: 0.3rem; }
+.place-row { display: flex; gap: 0.4rem; }
+.place-row input { flex: 1; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--c-border); border-radius: var(--radius); font: inherit; }
+.place-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.place-item { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; padding: 0.25rem 0.4rem; border: 1px solid var(--c-border); border-radius: var(--radius); }
+.place-text { display: flex; flex-direction: column; min-width: 0; }
+.place-text strong { font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alm-place { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.4rem; }
+.alm-days { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.6rem 0 0.2rem; }
+.alm-h { margin: 0.9rem 0 0.3rem; font-size: 0.95rem; }
+.alm-phases, .alm-tides { margin: 0.3rem 0; padding-left: 1.1rem; font-size: 0.85rem; }
+.tide-chart { display: block; width: 100%; height: auto; }
+.probe-alm { color: var(--c-primary); margin-top: 0.3rem; font-size: 0.8rem; }
 .route-disclaimer { margin: 0; padding: 0.35rem 0.5rem; border-radius: var(--radius); background: var(--c-warn-bg); color: var(--c-warn-fg); font-weight: 600; font-size: 0.8rem; }
 .route-summary { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.75rem; margin: 0; }
 .route-summary dt { color: var(--c-muted); }

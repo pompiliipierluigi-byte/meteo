@@ -5,7 +5,7 @@ import { it } from './i18n/it.js';
 import { fill } from './lib/text.js';
 import { getPref, setPref } from './lib/prefs.js';
 import { formatShortDateTime } from './lib/format.js';
-import { initDisclaimer } from './ui/disclaimer.js';
+import { initDisclaimer, showDisclaimerModal } from './ui/disclaimer.js';
 import { createMap } from './map/map.js';
 import { createSideMenu, radioGroup, checkbox, rangeRow } from './ui/side-menu.js';
 import { createWeatherLayers } from './map/weather-layers.js';
@@ -13,6 +13,12 @@ import { createLegend } from './ui/legend.js';
 import { initProbe } from './ui/probe.js';
 import { createRoutePoints } from './ui/route-points.js';
 import { createRoutePanel } from './ui/route-panel.js';
+import { createRoutesRepo } from './data/routes-repo.js';
+import { openRoutesPanel } from './ui/routes-panel.js';
+import { openAlmanacPanel } from './ui/almanac-panel.js';
+import { createPlacesRepo, toSearchPlace } from './data/places-repo.js';
+import { openPlacesPanel } from './ui/places-panel.js';
+import { promptBox } from './ui/panel.js';
 import { RoutingClient } from './routing/client.js';
 import { createRouteLayer } from './map/route-layer.js';
 import { initAuth } from './ui/auth.js';
@@ -59,6 +65,8 @@ const state = {
   tMs: Math.floor(Date.now() / 3600e3) * 3600e3,
   wind: null,
   waves: null,
+  /** @type {import('./weather/weather-service.js').WaveResult | null} */
+  sst: null,
 };
 
 function start() {
@@ -76,7 +84,7 @@ function start() {
   const version = document.createElement('span');
   version.className = 'app-version';
   version.textContent = fill(it.app.version, { v: APP_VERSION });
-  bottombar.querySelector('.disclaimer-bar')?.append(version);
+  bottombar.querySelector('.disclaimer-close')?.before(version);
 
   const mapCtl = createMap(document.getElementById('map'));
   const menu = createSideMenu(topbar);
@@ -123,6 +131,32 @@ function start() {
   let profile = null;
   /** @type {import('./data/boats-repo.js').Boat[]} */
   let boats = [];
+  const placesRepo = createPlacesRepo(getClient);
+  /** @type {import('./data/places-repo.js').SavedPlace[]} */
+  let places = [];
+  const savedPlaces = () => places.map(toSearchPlace);
+  const homePlace = () => savedPlaces().find((p) => p.home) ?? null;
+  const reloadPlaces = async () => {
+    try {
+      places = auth.user() ? await placesRepo.list() : [];
+    } catch (err) {
+      // Tabella non ancora creata (migrazione 0003) o Supabase in pausa: il resto funziona.
+      console.warn('Luoghi salvati non disponibili:', err);
+      places = [];
+    }
+  };
+  /** @param {{lat: number, lon: number}} p @param {string} name */
+  const savePlace = async (p, name) => {
+    const n = await promptBox(it.savedPlaces.saveAsk, name, it.savedPlaces.save);
+    if (!n) return;
+    try {
+      await placesRepo.create({ name: n, lat: p.lat, lon: p.lon });
+      await reloadPlaces();
+      notice.show(fill(it.savedPlaces.saved, { name: n }));
+    } catch (err) {
+      notice.show(err?.errors ? err.errors.join(' · ') : errorMessage(err), 'error');
+    }
+  };
   const accountSec = menu.addSection(it.boats.section);
   const accountHint = document.createElement('p');
   accountHint.className = 'muted small';
@@ -138,7 +172,11 @@ function start() {
   profileBtn.type = 'button';
   profileBtn.className = 'btn-secondary';
   profileBtn.textContent = it.profile.open;
-  accountBtns.append(boatsBtn, profileBtn);
+  const placesBtn = document.createElement('button');
+  placesBtn.type = 'button';
+  placesBtn.className = 'btn-secondary';
+  placesBtn.textContent = it.savedPlaces.open;
+  accountBtns.append(boatsBtn, profileBtn, placesBtn);
   accountSec.append(accountHint, activeLine, accountBtns);
 
   const activeBoat = () => boats.find((b) => b.id === profile?.default_boat_id) ?? null;
@@ -159,9 +197,11 @@ function start() {
     if (!auth.user()) {
       profile = null;
       boats = [];
+      places = [];
       renderAccount();
       return;
     }
+    reloadPlaces();
     try {
       [profile, boats] = await Promise.all([profileRepo.get(), boatsRepo.list()]);
       // Preferenze salvate nel profilo: modello applicato all'accesso.
@@ -271,6 +311,7 @@ function start() {
     wind: s.windField || s.windArrows,
     wave: s.wave === 'none' ? null : waveNames[s.wave],
     current: s.currents,
+    sst: s.sst,
   });
   const wx = createWeatherLayers(mapCtl.map, getPref('layers', {}), (s) => {
     setPref('layers', s);
@@ -283,6 +324,10 @@ function start() {
   for (const id of /** @type {const} */ (['windField', 'windArrows'])) {
     checkbox(windSec, it.layers[id], ls[id], (on) => wx.setToggle(id, on));
   }
+  radioGroup(windSec, 'windSymbol', [
+    { value: 'arrows', label: it.layers.windSymbolArrows },
+    { value: 'barbs', label: it.layers.windSymbolBarbs },
+  ], ls.windSymbol, (v) => wx.setWindSymbol(/** @type {any} */ (v)));
   const waveSec = menu.addSection(it.layers.wave);
   radioGroup(waveSec, 'wave', [
     { value: 'none', label: it.layers.waveNone },
@@ -314,6 +359,29 @@ function start() {
   curSec.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: it.layers.currentsHint }));
   if (ls.currents) setTimeout(loadCurrents, 0);
 
+  // Temperatura del mare: come le correnti, scaricata solo quando serve.
+  const sstSec = menu.addSection(it.layers.sst);
+  let sstLoaded = false;
+  const loadSst = async () => {
+    if (sstLoaded) return;
+    try {
+      const r = await weather.getSst();
+      sstLoaded = true;
+      state.sst = r;
+      wx.setSst(r.field);
+      probe.refresh();
+    } catch (err) {
+      recordError(err);
+      notice.show(fill(it.notice.error, { msg: err?.message ?? String(err) }), 'error');
+    }
+  };
+  checkbox(sstSec, it.layers.sst, ls.sst, (on) => {
+    wx.setToggle('sst', on);
+    if (on) loadSst();
+  });
+  sstSec.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: it.layers.sstHint }));
+  if (ls.sst) setTimeout(loadSst, 0);
+
   rangeRow(menu.addSection(it.layers.opacity), it.layers.opacity, {
     min: 0.1, max: 1, step: 0.05, value: ls.opacity, format: (v) => `${Math.round(v * 100)} %`,
   }, (v) => wx.setOpacity(v));
@@ -325,6 +393,15 @@ function start() {
     (on) => mapCtl.setSeamarks(on));
 
   // Diagnostica: ultimo errore dei dati meteo, conservato tra le sessioni per poterlo riferire.
+  // Avviso sempre raggiungibile dal menu, anche con la barra chiusa.
+  const discSec = menu.addSection(it.disclaimer.menuTitle);
+  const discBtn = document.createElement('button');
+  discBtn.type = 'button';
+  discBtn.className = 'btn-secondary';
+  discBtn.textContent = `⚠️ ${it.disclaimer.showAgain}`;
+  discBtn.addEventListener('click', () => { menu.close(); showDisclaimerModal(); });
+  discSec.append(discBtn);
+
   const diag = document.createElement('p');
   diag.className = 'diag';
   menu.addSection(it.diag.title).append(diag);
@@ -342,6 +419,7 @@ function start() {
 
   // --- Rotta (fase 3) ---
   const routing = new RoutingClient();
+  const routesRepo = createRoutesRepo(getClient);
   const routePoints = createRoutePoints(mapCtl.map, L, {
     snap: (pts) => routing.snap(pts, 0.15),
     notify: (text, kind = 'info') => (text ? notice.show(text, kind) : notice.hide()),
@@ -366,9 +444,45 @@ function start() {
     },
     weatherEvents: weather,
     onLayout: () => mapCtl.map.invalidateSize({ pan: false }),
+    routesRepo,
+    openSaved: (onOpen) => openRoutesPanel({ repo: routesRepo, onOpen }),
+    setTime: (tMs) => slider.set(tMs),
+    savedPlaces,
+    homePlace,
+    savePlace: (p, name) => { savePlace(p, name); },
+    placeExtra: (p) => {
+      if (!auth.user() || p.kind === 'saved') return null;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn-small';
+      b.textContent = '★';
+      b.title = b.ariaLabel = it.savedPlaces.saveTitle;
+      b.addEventListener('click', () => savePlace(p, p.name));
+      return b;
+    },
   });
 
-  const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null);
+  const mapCenter = () => {
+    const c = mapCtl.map.getCenter();
+    return { lat: c.lat, lon: c.lng };
+  };
+  /** @param {{lat: number, lon: number, name?: string}} place */
+  const openAlmanac = (place) => openAlmanacPanel({ place, mapCenter, savedPlaces });
+  placesBtn.addEventListener('click', () => {
+    menu.close();
+    openPlacesPanel({ repo: placesRepo, onChanged: () => { reloadPlaces(); }, onUse: (p) => openAlmanac(p) });
+  });
+  const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null,
+    (lat, lon) => openAlmanac({ lat, lon }));
+  const almBtn = document.createElement('button');
+  almBtn.type = 'button';
+  almBtn.className = 'btn-secondary';
+  almBtn.textContent = it.almanac.open;
+  almBtn.addEventListener('click', () => {
+    menu.close();
+    openAlmanac(homePlace() ?? { ...mapCenter(), name: it.almanac.mapCenterName });
+  });
+  menu.addSection(it.almanac.title).append(almBtn);
 
   const slider = createTimeSlider(bottombar, (tMs) => {
     state.tMs = tMs;

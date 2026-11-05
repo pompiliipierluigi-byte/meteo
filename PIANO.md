@@ -94,15 +94,20 @@ Riferimenti: [SPEC.md](SPEC.md) per i requisiti, [CLAUDE.md](CLAUDE.md) per conv
 **Decisioni di riferimento**: 16, 22.
 
 **Da riprendere (aperti al termine della fase 3, 2026-11-05)**
-- Testo della modale di avviso (SPEC §2.8): dice che le correnti "non sono considerate", ma dalla fase 3 lo sono → nuovo testo da concordare, poi incrementare `disclaimer.version` in `js/i18n/it.js`.
+- ~~Testo della modale di avviso~~: aggiornato (versione 2, correnti "stimate dal modello").
 - Verifica su smartphone del tempo di calcolo di una rotta (voce "calcolo in … s" nel riepilogo; obiettivo < 3 s per ~100 NM).
-- Barbe meteorologiche del vento al posto delle frecce (o come opzione): da chiedere.
+- ~~Barbe meteorologiche del vento~~: fatte, opzione nel menu Livelli, frecce predefinite.
 - Ramo `claude/fase-3-routing-wip` su GitHub da eliminare (a mano).
 
 **Note per lo sviluppo**
 - Dall'ambiente di sviluppo Open-Meteo, Supabase, CARTO e osmdata non sono raggiungibili: le prove nel browser usano dati simulati (Playwright `page.route`); per scaricare dati esterni si usa GitHub Actions (es. `.github/workflows/coastline.yml`).
 - Quota Open-Meteo: limitatore a 300 chiamate/min (`js/weather/rate-limit.js`); la finestra di partenza deve riusare lo stesso meteo di corridoio per i 24 run, senza nuove richieste.
 - Migrazioni: provarle con `sh supabase/tests/run-local.sh` (PostgreSQL locale con schema `auth` simulato) prima di farle eseguire nel SQL Editor di Supabase.
+
+**Stato (2026-11-05)**: passi 1–5 fatti (versione 1.8). Da fare a mano:
+- eseguire `supabase/migrations/0002_routes.sql` nel SQL Editor di Supabase (guida in `supabase/README.md`), poi `node supabase/tests/rls-rest-check.mjs` per la RLS sul progetto reale;
+- su smartphone: tempo della finestra (obiettivo < 60 s, voce "24 partenze calcolate in … s") e della rotta singola.
+In sviluppo (PC, 4 core, pool da 2 worker, dati simulati): finestra di ~200 NM in 20–25 s, interfaccia reattiva, annullamento ok; rotta salvata riaperta con riepilogo e tabella identici.
 
 **Passi**
 1. Migrazione SQL: tabella `routes` + RLS: `supabase/migrations/0002_routes.sql`.
@@ -120,7 +125,36 @@ Riferimenti: [SPEC.md](SPEC.md) per i requisiti, [CLAUDE.md](CLAUDE.md) per conv
 
 ---
 
-## Dopo le fasi 1–4
+## Fase 5 — Luoghi, sole e luna, maree, temperatura del mare
+
+**Obiettivo**: richieste del 2026-11-05 dopo le prove della fase 4.
+
+**Decisioni (2026-11-05)**
+- Barra dell'avviso chiudibile con ✕ fino al prossimo avvio; avviso sempre nel menu, nel riepilogo rotta e nella finestra.
+- Maree da Open-Meteo Marine (`sea_level_height_msl`: marea + effetto meteo, ~8 km), con avviso di precisione limitata sotto costa.
+- Località: elenco di porti adriatici incluso nell'app (offline) + ricerca online con Open-Meteo Geocoding; il punto si sposta al mare più vicino.
+- Luoghi salvati (porto base, preferiti) su Supabase con login (tabella `places` con RLS).
+
+**Passi**
+1. Barra dell'avviso chiudibile: `js/ui/disclaimer.js`.
+2. Layer temperatura superficiale del mare (Open-Meteo Marine `sea_surface_temperature`), scaricato solo quando attivo: `js/map/sst-layer.js`.
+3. Sole e luna: alba, tramonto, crepuscoli, sorgere/tramonto e fase della luna calcolati in locale: `js/lib/astro.js` + test.
+4. Pagina "Sole, luna e maree" per una località, con grafico della marea e alte/basse: `js/weather/tides.js`, `js/ui/almanac-panel.js`.
+5. Località: elenco porti `data/places/ports.json`, ricerca (porti + geocoding), partenza/arrivo/waypoint da località: `js/places/search.js`, `js/ui/place-picker.js`.
+6. Luoghi salvati e porto base: `supabase/migrations/0003_places.sql`, `js/data/places-repo.js`, uso nel pannello rotta e nella pagina sole/luna/maree.
+
+**Stato (2026-11-05)**: passi 1–6 fatti (versione 1.9). Da fare a mano: eseguire `supabase/migrations/0003_places.sql` (dopo la 0002) nel SQL Editor e `rls-rest-check.mjs`; verificare sul telefono marea e ricerca online (non raggiungibili dall'ambiente di sviluppo: provate con dati simulati).
+
+**Fatto quando**
+- La barra si chiude e ricompare al riavvio; l'avviso resta nel menu.
+- Temperatura del mare sulla mappa con legenda; sonda con il valore.
+- Alba/tramonto entro ±2 min e luna entro ±5 min rispetto a effemeridi di riferimento (test).
+- Partenza impostabile scrivendo "Giulianova"; porto base salvato e proposto come partenza.
+- RLS verificata su `places`.
+
+---
+
+## Dopo le fasi 1–5
 
 - Esportazione del routage per condivisione e uso offline (PDF/JPG/altro).
 - Confronto esplicito tra modelli (stessa rotta con due modelli, sovrapposta).
