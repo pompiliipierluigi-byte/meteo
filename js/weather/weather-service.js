@@ -2,15 +2,13 @@
 // con cache prima della rete (SPEC §3.4).
 
 import { BBOX, HORIZON_H, MARINE, MODELS, PANORAMIC_STEP_DEG } from '../config.js';
-import { makeGrid, gridPoint, maskedIndices, seaMaskFromSeries, dilateMask, fillNearest } from './grid.js';
+import { makeGrid, gridPoint, maskedIndices, fillNearest } from './grid.js';
+import { SEA_MASK_GRID_ID, SEA_MASK_BITS } from './sea-mask.js';
 import {
   fetchPoints, fetchLastRunMs, windField, waveField, WIND_VARS, WAVE_VARS, WAVE_FIELD_VARS,
 } from './openmeteo.js';
-import { getLatestField, putField, touchField, getKv, putKv, cacheDecision, expectedLatestRunMs } from './cache.js';
+import { getLatestField, putField, touchField, cacheDecision, expectedLatestRunMs } from './cache.js';
 import { sourcesFor, fuseAuto, singleModel } from './models.js';
-
-/** Versione della maschera: incrementare se cambia il modo di calcolarla. */
-const MASK_VERSION = 1;
 
 /**
  * Esito del caricamento di una sorgente.
@@ -40,8 +38,6 @@ export class WeatherService extends EventTarget {
     this.grid = makeGrid(BBOX, PANORAMIC_STEP_DEG, `pan${PANORAMIC_STEP_DEG}`);
     /** @type {Uint8Array | null} */
     this.mask = null;
-    /** @type {Promise<Uint8Array> | null} */
-    this.maskPromise = null;
     /** @type {Map<string, Promise<Loaded>>} caricamenti in corso, per non duplicarli */
     this.pending = new Map();
   }
@@ -56,40 +52,17 @@ export class WeatherService extends EventTarget {
   }
 
   /**
-   * Maschera dei punti da scaricare (mare + anello costiero). Al primo avvio si ricava
-   * dall'onda sull'intera griglia; quella prima risposta diventa anche la cache dell'onda.
+   * Maschera dei punti da scaricare (mare + punti costieri), precalcolata dalla linea di costa
+   * Natural Earth (js/weather/sea-mask.js): nessuna richiesta di rete.
    * @returns {Promise<Uint8Array>}
    */
-  ensureMask() {
-    if (!this.maskPromise) {
-      this.maskPromise = this.buildMask().catch((err) => {
-        this.maskPromise = null;
-        throw err;
-      });
+  async ensureMask() {
+    if (!this.mask) {
+      if (SEA_MASK_GRID_ID !== this.grid.id || SEA_MASK_BITS.length !== this.grid.nx * this.grid.ny) {
+        throw new Error('Maschera mare non coerente con la griglia: rigenerarla (tools/seamask)');
+      }
+      this.mask = Uint8Array.from(SEA_MASK_BITS, (c) => (c === '1' ? 1 : 0));
     }
-    return this.maskPromise;
-  }
-
-  /** @returns {Promise<Uint8Array>} */
-  async buildMask() {
-    if (this.mask) return this.mask;
-    const key = `seamask|${this.grid.id}|v${MASK_VERSION}`;
-    const stored = await getKv(key);
-    if (stored instanceof Uint8Array && stored.length === this.grid.nx * this.grid.ny) {
-      this.mask = stored;
-      return stored;
-    }
-    const all = maskedIndices(this.grid);
-    let runMs = NaN;
-    try { runMs = await fetchLastRunMs('marine', MARINE.meta); } catch { /* run stimato */ }
-    const entry = await this.download('marine', all, runMs);
-    const series = all.map((_, k) => Array.from(entry.raw.series.wave_height[k]));
-    const sea = seaMaskFromSeries(this.grid, all, series);
-    this.mask = dilateMask(this.grid, sea, 1);
-    await putKv(key, this.mask);
-    // L'onda appena scaricata vale come cache (riempimento costiero sui punti della maschera).
-    fillNearest(entry.field, WAVE_FIELD_VARS, this.mask, 2);
-    await putField(entry.cached);
     return this.mask;
   }
 
@@ -156,11 +129,6 @@ export class WeatherService extends EventTarget {
     if (decision === 'fresh' && cached) return { entry: cached, fromCache: true, error: null };
     try {
       const mask = await this.ensureMask();
-      // ensureMask può aver appena scaricato l'onda: in tal caso è già aggiornata.
-      if (isMarine && !cached) {
-        const fresh = await getLatestField(source, this.grid.id);
-        if (fresh) return { entry: fresh, fromCache: false, error: null };
-      }
       let runMs = NaN;
       try {
         runMs = await fetchLastRunMs(isMarine ? 'marine' : 'forecast', cfg.meta);

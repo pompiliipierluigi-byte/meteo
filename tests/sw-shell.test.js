@@ -42,3 +42,10 @@ test('nessun percorso assoluto verso il proprio sito', () => {
     assert.ok(!/github\.io/.test(text), `${f}: URL del sito`);
   }
 });
+
+test('versione del service worker allineata ad APP_VERSION', async () => {
+  const { APP_VERSION } = await import('../js/config.js');
+  const sw = readFileSync(join(root, 'sw.js'), 'utf8');
+  const v = sw.match(/const VERSION = '([^']+)'/)[1];
+  assert.ok(v === APP_VERSION || v.startsWith(`${APP_VERSION}-`), `sw.js ${v} ≠ APP_VERSION ${APP_VERSION}`);
+});

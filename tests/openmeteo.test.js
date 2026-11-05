@@ -47,7 +47,7 @@ test('fetchPoints divide in blocchi e ricompone l’ordine; campo vento coerente
     return { ok: true, json: async () => (body.length === 1 ? body[0] : body) };
   };
   const data = await fetchPoints('forecast', points, WIND_VARS, { fetchFn });
-  assert.deepEqual(calls, [100, 50]);
+  assert.deepEqual(calls, [50, 50, 50]);
   const f = windField(g, points.map((_, i) => i), data);
   const u = sample(f, 'u', 0, 120, 0);
   const v = sample(f, 'v', 0, 120, 0);
