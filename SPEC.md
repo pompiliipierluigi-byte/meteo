@@ -420,7 +420,7 @@ Traccia = array di punti `{t, lat, lon, heading, bsp, cog, sog, tws, twd, twa, g
 
 ### 6.7 Finestra di partenza
 
-- 24 run con t0 = ora intera successiva + k h, k = 0…23; stesso campo meteo caricato una sola volta nel worker.
+- 24 run con t0 = ora intera successiva (all'ora del cursore temporale, se è più avanti) + k h, k = 0…23; stesso campo meteo caricato una sola volta nel worker (in ogni worker del pool); le rotte non trovate (oltre l'orizzonte, costa, limiti) restano visibili come tali.
 - Per ogni run: durata, distanza, ore di motore, ore di bolina (a vela con TWA < `split_twa_deg`), vento/raffica/onda massimi, flag "fuori limite".
 - Categorie, calcolate tra i run non fuori limite:
   - **Speedy**: `duration_h` minima;

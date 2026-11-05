@@ -15,7 +15,7 @@ export class RoutingClient {
     /** @type {Worker | null} */
     this.worker = null;
     this.seq = 0;
-    /** @type {Map<number, {resolve: Function, reject: Function, onProgress?: (f: number) => void}>} */
+    /** @type {Map<number, {resolve: Function, reject: Function, onProgress?: (f: number) => void, onRun?: (r: any) => void}>} */
     this.pending = new Map();
   }
 
@@ -42,6 +42,10 @@ export class RoutingClient {
       p.onProgress?.(m.fraction);
       return;
     }
+    if (m.type === 'windowRun') {
+      p.onRun?.(m);
+      return;
+    }
     this.pending.delete(m.id);
     if (m.type === 'error') p.reject(new RoutingError(m.message, m.code));
     else p.resolve(m);
@@ -50,13 +54,14 @@ export class RoutingClient {
   /**
    * @param {object} msg
    * @param {(f: number) => void} [onProgress]
+   * @param {(r: any) => void} [onRun]
    * @returns {Promise<any>}
    */
-  send(msg, onProgress) {
+  send(msg, onProgress, onRun) {
     const id = ++this.seq;
     const w = this.ensure();
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject, onProgress });
+      this.pending.set(id, { resolve, reject, onProgress, onRun });
       w.postMessage({ ...msg, id });
     });
   }
@@ -70,6 +75,19 @@ export class RoutingClient {
    */
   route(request, weather, onProgress) {
     return this.send({ type: 'route', request, weather }, onProgress);
+  }
+
+  /**
+   * Più run con lo stesso meteo (finestra di partenza); ogni run arriva a `onRun` appena pronto.
+   * @param {import('./run.js').RouteRequest} request
+   * @param {{wind: import('../weather/grid.js').WeatherField, marine: import('../weather/grid.js').WeatherField | null}} weather
+   * @param {{index: number, departMs: number}[]} departures
+   * @param {(r: import('./departure-window.js').WindowRun & {index: number}) => void} onRun
+   * @param {(f: number) => void} [onProgress]
+   * @returns {Promise<void>}
+   */
+  async window(request, weather, departures, onRun, onProgress) {
+    await this.send({ type: 'window', request, weather, departures }, onProgress, onRun);
   }
 
   /**

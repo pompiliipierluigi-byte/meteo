@@ -8,6 +8,7 @@ import { correctionsFor, cleanProfile, PROFILE_DEFAULTS } from '../data/profile-
 import { errorMessage } from '../data/supabase.js';
 import { fill } from '../lib/text.js';
 import { modelLabel } from '../weather/models.js';
+import { departureTimes, runDepartureWindow } from '../routing/departure-window.js';
 
 /**
  * Dipendenze per il calcolo.
@@ -55,8 +56,9 @@ export function createRoutePanel(host, topbar, points, deps) {
   const body = el('div', 'route-sheet-body');
   const optionsBox = el('div', 'route-options');
   const runBox = el('div', 'route-run');
+  const windowBox = el('div', 'route-window');
   const resultBox = el('div', 'route-result');
-  body.append(pointsBox, optionsBox, runBox, resultBox);
+  body.append(pointsBox, optionsBox, runBox, windowBox, resultBox);
   root.append(head, pickBar, body);
   host.prepend(root);
 
@@ -186,7 +188,10 @@ export function createRoutePanel(host, topbar, points, deps) {
   }
 
   // --- Calcolo --------------------------------------------------------------------
+  /** @type {false | 'route' | 'window'} */
   let running = false;
+  /** @type {{cancel: () => void} | null} finestra di partenza in corso */
+  let winJob = null;
   const msg = el('p', 'panel-msg');
 
   /** @param {string} text @param {'ok' | 'error'} kind */
@@ -199,10 +204,11 @@ export function createRoutePanel(host, topbar, points, deps) {
     const c = deps.context();
     runBox.replaceChildren();
     const depart = el('p', 'small', `${t.departure}: ${formatDateTime(c.tMs)} ${t.departureHint}`);
-    const calc = btn(running ? t.running : t.compute, compute, 'btn-primary');
-    calc.disabled = running || !c.user || !c.boats.length || points.route().length < 2;
+    const calc = btn(running === 'route' ? t.running : t.compute, compute, 'btn-primary');
+    const win = btn(running === 'window' ? t.running : t.window, computeWindow, 'btn-secondary');
+    calc.disabled = win.disabled = Boolean(running) || !c.user || !c.boats.length || points.route().length < 2;
     const row = el('div', 'btn-row');
-    row.append(calc);
+    row.append(calc, win);
     if (running) row.append(btn(t.cancel, cancel, 'btn-danger'));
     runBox.append(depart, row, bar, msg);
   }
@@ -219,19 +225,17 @@ export function createRoutePanel(host, topbar, points, deps) {
   };
 
   function cancel() {
-    deps.routing.cancel();
+    if (winJob) winJob.cancel();
+    else deps.routing.cancel();
   }
 
-  async function compute() {
-    const c = deps.context();
-    const boat = c.boats.find((b) => b.id === boatId);
-    const route = points.route();
-    if (!boat?.polars.full || route.length < 2) return;
-    running = true;
-    showMsg('', 'ok');
-    renderRun();
-    resultBox.replaceChildren();
-    deps.layer.clear();
+  /**
+   * Meteo del corridoio con avanzamento nella prima metà della barra.
+   * @param {any} c contesto
+   * @param {{lat: number, lon: number}[]} route
+   * @param {number} untilMs ultima partenza prevista (Auto: decide se serve anche ECMWF)
+   */
+  async function corridorWeather(c, route, untilMs) {
     const onWx = (e) => {
       const { label, done, total, waitMs } = /** @type {CustomEvent} */ (e).detail;
       setBar(total ? (done / total) * 0.5 : 0, waitMs > 0 ? `${label}: ${done}/${total} · ${fill(it.notice.quotaWait, { s: Math.ceil(waitMs / 1000) })}` : `${label}: ${done}/${total}`);
@@ -239,30 +243,79 @@ export function createRoutePanel(host, topbar, points, deps) {
     deps.weatherEvents.addEventListener('progress', onWx);
     try {
       setBar(0, t.loadingWeather);
-      const weather = await deps.getCorridor(c.choice, route, c.tMs);
+      return await deps.getCorridor(c.choice, route, untilMs);
+    } finally {
       deps.weatherEvents.removeEventListener('progress', onWx);
-      const p = { ...PROFILE_DEFAULTS, ...(c.profile ?? {}) };
-      const overrides = cleanProfile(corr).value;
-      const prof = { ...p, ...overrides };
-      const request = {
-        route,
-        departMs: c.tMs,
-        polars: { full: boat.polars.full.data, white: boat.polars.white?.data ?? null },
-        sails,
-        corrections: correctionsFor(/** @type {any} */ (prof), boat),
-        motor: {
-          mode: prof.motor_mode,
-          thresholdKn: Number(prof.motor_threshold_kn),
-          speedKn: Number(boat.motor_speed_kn),
-          nearLand: Boolean(prof.motor_near_land),
-          nearLandNm: Number(prof.motor_near_land_nm),
-        },
-        limits: { twsKn: prof.limit_tws_kn, gustKn: prof.limit_gust_kn, waveM: prof.limit_wave_m },
-        coastMarginNm: Number(prof.coast_margin_nm),
-        coastWarningNm: Number(prof.coast_warning_nm),
-        waveWarningM: Number(prof.wave_warning_m),
-        keepIsochrones: false,
-      };
+    }
+  }
+
+  /**
+   * Richiesta di calcolo con profilo, correttivi del pannello e barca.
+   * @param {any} c contesto
+   * @param {import('../data/boats-repo.js').Boat} boat
+   * @param {{lat: number, lon: number}[]} route
+   * @param {number} departMs
+   * @returns {import('../routing/run.js').RouteRequest}
+   */
+  function buildRequest(c, boat, route, departMs) {
+    const p = { ...PROFILE_DEFAULTS, ...(c.profile ?? {}) };
+    const overrides = cleanProfile(corr).value;
+    const prof = { ...p, ...overrides };
+    return {
+      route,
+      departMs,
+      polars: { full: boat.polars.full.data, white: boat.polars.white?.data ?? null },
+      sails,
+      corrections: correctionsFor(/** @type {any} */ (prof), boat),
+      motor: {
+        mode: prof.motor_mode,
+        thresholdKn: Number(prof.motor_threshold_kn),
+        speedKn: Number(boat.motor_speed_kn),
+        nearLand: Boolean(prof.motor_near_land),
+        nearLandNm: Number(prof.motor_near_land_nm),
+      },
+      limits: { twsKn: prof.limit_tws_kn, gustKn: prof.limit_gust_kn, waveM: prof.limit_wave_m },
+      coastMarginNm: Number(prof.coast_margin_nm),
+      coastWarningNm: Number(prof.coast_warning_nm),
+      waveWarningM: Number(prof.wave_warning_m),
+      keepIsochrones: false,
+    };
+  }
+
+  /** Barca e punti pronti per il calcolo, o null. */
+  function ready() {
+    const c = deps.context();
+    const boat = c.boats.find((b) => b.id === boatId);
+    const route = points.route();
+    if (!boat?.polars.full || route.length < 2) return null;
+    return { c, boat, route };
+  }
+
+  /** @param {'route' | 'window'} kind */
+  function begin(kind) {
+    running = kind;
+    showMsg('', 'ok');
+    renderRun();
+    resultBox.replaceChildren();
+    deps.layer.clear();
+  }
+
+  /** @param {any} err */
+  function failed(err) {
+    bar.classList.add('hidden');
+    showMsg(err?.code === 'cancelled' ? t.cancelled : (err?.message ?? errorMessage(err)), err?.code === 'cancelled' ? 'ok' : 'error');
+  }
+
+  async function compute() {
+    const r = ready();
+    if (!r) return;
+    const { c, boat, route } = r;
+    begin('route');
+    windowBox.replaceChildren();
+    win = null;
+    try {
+      const weather = await corridorWeather(c, route, c.tMs);
+      const request = buildRequest(c, boat, route, c.tMs);
       setBar(0.5, t.computing);
       const t0 = performance.now();
       const res = await deps.routing.route(request, { wind: weather.wind.field, marine: weather.marine }, (f) => setBar(0.5 + f * 0.5, `${t.computing} ${Math.round(f * 100)} %`));
@@ -273,13 +326,100 @@ export function createRoutePanel(host, topbar, points, deps) {
       renderResult(res, { boat, sails, weather, secs });
       bar.classList.add('hidden');
     } catch (err) {
-      bar.classList.add('hidden');
-      showMsg(err?.code === 'cancelled' ? t.cancelled : (err?.message ?? errorMessage(err)), err?.code === 'cancelled' ? 'ok' : 'error');
+      failed(err);
     } finally {
-      deps.weatherEvents.removeEventListener('progress', onWx);
       running = false;
       renderRun();
     }
+  }
+
+  // --- Finestra di partenza (SPEC §2.7) -----------------------------------------------
+  /**
+   * Stato dell'ultima finestra calcolata.
+   * @type {{departures: number[], runs: (import('../routing/departure-window.js').WindowRun | undefined)[],
+   *   selected: number | null, info: {boat: any, sails: string, weather: any, secs: number}} | null}
+   */
+  let win = null;
+
+  async function computeWindow() {
+    const r = ready();
+    if (!r) return;
+    const { c, boat, route } = r;
+    begin('window');
+    const departures = departureTimes(Math.max(c.tMs, Date.now()));
+    win = { departures, runs: new Array(departures.length), selected: null, info: { boat, sails, weather: null, secs: 0 } };
+    renderWindow();
+    try {
+      const weather = await corridorWeather(c, route, departures[departures.length - 1]);
+      win.info.weather = weather;
+      const request = buildRequest(c, boat, route, departures[0]);
+      const t0 = performance.now();
+      setBar(0.5, fill(t.windowProgress, { n: 0, total: departures.length }));
+      const job = runDepartureWindow({
+        request,
+        weather: { wind: weather.wind.field, marine: weather.marine },
+        departures,
+        primary: deps.routing,
+        onRun: (i, run) => {
+          if (win) win.runs[i] = run;
+          renderWindow();
+        },
+        onProgress: (n, total, f) => setBar(0.5 + f * 0.5, fill(t.windowProgress, { n, total })),
+      });
+      winJob = job;
+      await job.done;
+      win.info.secs = (performance.now() - t0) / 1000;
+      bar.classList.add('hidden');
+      renderWindow();
+    } catch (err) {
+      failed(err);
+      if (err?.code === 'cancelled' && win && !win.runs.some(Boolean)) {
+        win = null;
+        windowBox.replaceChildren();
+      }
+    } finally {
+      winJob = null;
+      running = false;
+      renderRun();
+    }
+  }
+
+  /** Mostra su mappa e nel riepilogo la rotta di una partenza della finestra. @param {number} i */
+  function selectRun(i) {
+    const run = win?.runs[i];
+    if (!win || !run) return;
+    win.selected = i;
+    renderWindow();
+    resultBox.replaceChildren();
+    deps.layer.clear();
+    if (run.error) {
+      resultBox.append(el('p', 'panel-msg', run.error.message));
+      return;
+    }
+    const res = { track: /** @type {any} */ (run.track), summary: run.summary };
+    deps.layer.show(res);
+    deps.layer.setTime(deps.context().tMs);
+    deps.layer.fit();
+    renderResult(res, win.info);
+  }
+
+  function renderWindow() {
+    windowBox.replaceChildren();
+    if (!win) return;
+    windowBox.append(el('h3', 'route-window-title', t.windowTitle), el('p', 'route-disclaimer', `⚠️ ${it.disclaimer.bar}`));
+    const list = el('div', 'route-window-list');
+    const hm = (h) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
+    win.departures.forEach((d, i) => {
+      const run = win.runs[i];
+      const label = !run ? `${formatShortDateTime(d)} …`
+        : run.error ? `${formatShortDateTime(d)} — ${t.windowNotFound}`
+          : `${formatShortDateTime(d)} — ${hm(run.summary.duration_h)} h, ${t.motorShort} ${hm(run.summary.motor_h)}, ${fmtNum(run.summary.max_tws_kn, 0)} kn`;
+      const b = btn(label, () => selectRun(i), win.selected === i ? 'btn-small active' : 'btn-small');
+      b.disabled = !run;
+      list.append(b);
+    });
+    windowBox.append(list);
+    if (win.info.secs) windowBox.append(el('small', 'muted', fill(t.windowMeta, { secs: win.info.secs.toFixed(0) })));
   }
 
   // --- Risultato ------------------------------------------------------------------
