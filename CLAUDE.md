@@ -37,7 +37,7 @@ PWA di weather routing per barca a vela in Adriatico (lat 39.8â€“45.8, lon 12.0â
 
 ## Test
 
-- Test dei moduli puri con il test runner integrato di Node (`node --test tests/`), senza dipendenze npm.
+- Test dei moduli puri con il test runner integrato di Node (`node --test tests/*.test.js`), senza dipendenze npm.
 - Verifiche manuali dell'interfaccia descritte nel criterio di "fatto" di ogni fase.
 
 ## Struttura dei file

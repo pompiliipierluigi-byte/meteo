@@ -180,16 +180,18 @@ Da **non** usare salvo necessità emersa in sviluppo: librerie per particelle (e
 
 | Uso | Endpoint | Modello (parametro `models`) | Note |
 |---|---|---|---|
-| Vento 0–72 h | Forecast API | ICON-2I (ItaliaMeteo-ARPAE, ~2.2 km) | Identificativo esatto da verificare in fase 1. |
-| Vento > 72 h | Forecast API | ECMWF IFS | Fino a +5 giorni. Run 00/06/12/18 UTC. Risoluzione da verificare (0.25° o 9 km). |
-| Confronto | Forecast API | GFS | ~0.25°. |
+| Vento 0–72 h | Forecast API | ICON-2I (ItaliaMeteo-ARPAE, ~2.2 km): `italia_meteo_arpae_icon_2i` | Ultima ora valida ricavata dai dati (valori non nulli). |
+| Vento > 72 h | Forecast API | ECMWF IFS 9 km: `ecmwf_ifs` | Fino a +5 giorni. Run 00/06/12/18 UTC. |
+| Confronto | Forecast API | GFS 0.25°: `gfs025` | |
 | Onda e correnti | Marine API | modello predefinito (best match) | `wave_*`, `wind_wave_*`, `swell_wave_*` (altezza, direzione, periodo); `ocean_current_velocity`, `ocean_current_direction`. |
 
-Variabili vento: `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m`, con `wind_speed_unit=kn` e `timezone=GMT`.
+Variabili vento: `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m`, con `wind_speed_unit=kn`, `timezone=GMT`, `timeformat=unixtime` e `cell_selection=sea` (cella di mare più vicina: evita valori ridotti dall'orografia).
+
+**Ultimo run disponibile**: `https://api.open-meteo.com/data/<modello>/static/meta.json` (`marine-api.` per l'onda), campo `last_run_initialisation_time`; nomi: `italia_meteo_arpae_icon_2i`, `ecmwf_ifs`, `ncep_gfs025`, `meteofrance_wave` (onda). File statico, non pesa sulla quota.
 
 **Griglia di campionamento** (Open-Meteo restituisce punti, non campi):
 
-- **Griglia panoramica** per la mappa: passo 0.25° sulla BBOX (≈ 25 × 32 = 800 punti), ridotta ai soli punti di mare (+ un anello di punti costieri) con la maschera della linea di costa → stima ≈ 400–450 punti.
+- **Griglia panoramica** per la mappa: passo 0.25° sulla BBOX (25 × 32 = 800 punti), ridotta ai soli punti di mare (+ un anello di punti costieri) → stima ≈ 400–450 punti. Finché la linea di costa non è disponibile (fase 3), la maschera mare si ricava dalla prima richiesta Marine sull'intera griglia (punti con onda sempre nulla = terra) e resta in cache senza scadenza.
 - **Griglia di corridoio** per il routing: passo fine (0.05°–0.1°, da tarare) solo nel corridoio tra partenza e arrivo (ellisse con fuochi in partenza/arrivo e margine). Necessaria per risolvere i canali tra le isole croate e gli effetti locali di ICON-2I.
 - Richieste con più coordinate per chiamata (liste `latitude`/`longitude` separate da virgola), suddivise in blocchi (dimensione da tarare per lunghezza URL e peso in quota).
 - Memorizzazione in `Float32Array` per variabile, indicizzate `[t][y][x]`; componenti vento convertite in `u`,`v` per l'interpolazione (la direzione non si interpola direttamente).
@@ -500,7 +502,7 @@ Tutte le domande sono state chiuse il 2026-11-04. Numeri mantenuti perché richi
 
 ### Da verificare in sviluppo (non servono tue risposte)
 
-- Identificativi esatti dei modelli Open-Meteo, orizzonte di ICON-2I, risoluzione ECMWF.
+- ~~Identificativi esatti dei modelli Open-Meteo, orizzonte di ICON-2I, risoluzione ECMWF.~~ Verificati in fase 1 (§3.4).
 - Peso in quota delle richieste multi-punto Open-Meteo.
 - Struttura dei file di orc-data.
 - Pesi del punteggio "Lazy" (proposta da validare sui primi casi reali).
