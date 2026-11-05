@@ -105,6 +105,7 @@ function render(p, lat, lon, tMs, waveRunMs) {
       <div class="probe-time">${formatDateTime(tMs)}</div>
       <table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>
       <div class="probe-model">${t.model}: ${model}; ${t.waveModel}: ${wave}</div>
+      <button type="button" class="link-btn probe-alm">☀️🌙 ${it.almanac.openHere}</button>
     </div>`;
 }
 
@@ -114,9 +115,10 @@ function render(p, lat, lon, tMs, waveRunMs) {
  * @param {typeof import('../../vendor/leaflet/leaflet-src.esm.js')} L
  * @param {() => {wind: import('../weather/weather-service.js').WindResult | null, waves: import('../weather/weather-service.js').WaveResult | null, sst?: import('../weather/weather-service.js').WaveResult | null, tMs: number}} getState
  * @param {() => boolean} [ignoreClick] true = il tocco serve ad altro (es. scelta di un punto della rotta)
+ * @param {(lat: number, lon: number) => void} [onAlmanac] apre sole, luna e maree nel punto
  * @returns {{refresh: () => void}} aggiorna il popup aperto (cambio di ora o di dati)
  */
-export function initProbe(map, L, getState, ignoreClick) {
+export function initProbe(map, L, getState, ignoreClick, onAlmanac) {
   const popup = L.popup({ maxWidth: 320, autoPanPaddingTopLeft: [10, 60], className: 'probe-popup', closeButton: true });
   /** @type {{lat: number, lng: number} | null} */
   let at = null;
@@ -136,5 +138,11 @@ export function initProbe(map, L, getState, ignoreClick) {
     popup.openOn(map);
   });
   popup.on('remove', () => { at = null; });
+  map.getContainer().addEventListener('click', (e) => {
+    if (!(/** @type {HTMLElement} */ (e.target).closest?.('.probe-alm')) || !at) return;
+    const { lat, lng } = at;
+    map.closePopup(popup);
+    onAlmanac?.(lat, lng);
+  });
   return { refresh: update };
 }

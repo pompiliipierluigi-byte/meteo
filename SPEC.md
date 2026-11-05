@@ -157,6 +157,14 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Luna: sorgere e tramonto, fase con percentuale illuminata, date delle prossime fasi principali.
 - Calcolati in locale senza rete (`js/lib/astro.js`, formule a bassa precisione); verificati contro PyEphem: sole entro 0.1 min, luna entro 0.5 min.
 - Maree: §2.13.
+- Accesso: menu ☰ → "Sole, luna e maree" (centro mappa) o tocco sulla mappa → sonda → "Sole, luna e maree qui".
+
+### 2.13 Maree
+
+- Livello del mare previsto per la località da Open-Meteo Marine (`sea_level_height_msl`, rispetto al medio mare: marea astronomica + effetto di vento e pressione), modello a ~8 km; serie oraria di 5–6 giorni.
+- Grafico del giorno con alte e basse (estremi della serie oraria raffinati con una parabola) e ora attuale; elenco con orari e livelli.
+- Cache locale di 6 h per località (arrotondata a 0.05°), poi rete; una sola chiamata per località (quota).
+- Avviso: sotto costa, in porto e nelle lagune la previsione può differire molto; non sostituisce le tavole di marea ufficiali (ISPRA).
 
 ---
 

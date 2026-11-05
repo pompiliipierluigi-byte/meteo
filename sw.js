@@ -82,6 +82,8 @@ const SHELL = [
   './js/ui/route-panel.js',
   './js/ui/window-chart.js',
   './js/ui/routes-panel.js',
+  './js/ui/almanac-panel.js',
+  './js/weather/tides.js',
   './vendor/supabase/supabase.js',
   './vendor/leaflet/leaflet-src.esm.js',
   './vendor/leaflet/leaflet.css',

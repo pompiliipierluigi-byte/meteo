@@ -613,6 +613,12 @@ button {
 .routes-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .routes-item { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem; border: 1px solid var(--c-border); border-radius: var(--radius); }
 .routes-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.alm-place { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.4rem; }
+.alm-days { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.6rem 0 0.2rem; }
+.alm-h { margin: 0.9rem 0 0.3rem; font-size: 0.95rem; }
+.alm-phases, .alm-tides { margin: 0.3rem 0; padding-left: 1.1rem; font-size: 0.85rem; }
+.tide-chart { display: block; width: 100%; height: auto; }
+.probe-alm { color: var(--c-primary); margin-top: 0.3rem; font-size: 0.8rem; }
 .route-disclaimer { margin: 0; padding: 0.35rem 0.5rem; border-radius: var(--radius); background: var(--c-warn-bg); color: var(--c-warn-fg); font-weight: 600; font-size: 0.8rem; }
 .route-summary { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.75rem; margin: 0; }
 .route-summary dt { color: var(--c-muted); }

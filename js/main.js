@@ -15,6 +15,7 @@ import { createRoutePoints } from './ui/route-points.js';
 import { createRoutePanel } from './ui/route-panel.js';
 import { createRoutesRepo } from './data/routes-repo.js';
 import { openRoutesPanel } from './ui/routes-panel.js';
+import { openAlmanacPanel } from './ui/almanac-panel.js';
 import { RoutingClient } from './routing/client.js';
 import { createRouteLayer } from './map/route-layer.js';
 import { initAuth } from './ui/auth.js';
@@ -413,7 +414,23 @@ function start() {
     setTime: (tMs) => slider.set(tMs),
   });
 
-  const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null);
+  const mapCenter = () => {
+    const c = mapCtl.map.getCenter();
+    return { lat: c.lat, lon: c.lng };
+  };
+  /** @param {{lat: number, lon: number, name?: string}} place */
+  const openAlmanac = (place) => openAlmanacPanel({ place, mapCenter });
+  const probe = initProbe(mapCtl.map, L, () => state, () => routePoints.picking() !== null,
+    (lat, lon) => openAlmanac({ lat, lon }));
+  const almBtn = document.createElement('button');
+  almBtn.type = 'button';
+  almBtn.className = 'btn-secondary';
+  almBtn.textContent = it.almanac.open;
+  almBtn.addEventListener('click', () => {
+    menu.close();
+    openAlmanac({ ...mapCenter(), name: it.almanac.mapCenterName });
+  });
+  menu.addSection(it.almanac.title).append(almBtn);
 
   const slider = createTimeSlider(bottombar, (tMs) => {
     state.tMs = tMs;
