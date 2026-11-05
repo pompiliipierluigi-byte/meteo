@@ -75,3 +75,20 @@ test('campo onda: altezza, periodo e versore di provenienza', () => {
   assert.ok(Number.isNaN(f.vars.swell_per[0]));
   assert.ok(Math.abs(f.vars.wwave_dx[0] - 1) < 1e-6);
 });
+
+test('campo marino del routing: corrente da km/h a nodi, verso di destinazione', async () => {
+  const { routeMarineField } = await import('../js/weather/openmeteo.js');
+  const g = makeGrid({ latMin: 0, latMax: 0, lonMin: 0, lonMax: 0 }, 1, 't');
+  const data = {
+    timesMs: [0],
+    series: {
+      wave_height: [[1.2]], wave_direction: [[0]], wave_period: [[4]],
+      ocean_current_velocity: [[1.852]], ocean_current_direction: [[90]],
+    },
+  };
+  const f = routeMarineField(g, [0], data);
+  assert.ok(Math.abs(f.vars.cur_u[0] - 1) < 1e-6);
+  assert.ok(Math.abs(f.vars.cur_v[0]) < 1e-6);
+  assert.equal(f.vars.wave_h[0], Number(Math.fround(1.2)));
+  assert.ok(Math.abs(f.vars.wave_dy[0] - 1) < 1e-6);
+});

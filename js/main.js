@@ -261,6 +261,7 @@ function start() {
   const updateLegend = (s) => legend.update({
     wind: s.windField || s.windArrows || (s.windParticles && !s.windField && s.wave === 'none'),
     wave: s.wave === 'none' ? null : waveNames[s.wave],
+    current: s.currents,
   });
   const wx = createWeatherLayers(mapCtl.map, getPref('layers', {}), (s) => {
     setPref('layers', s);
@@ -282,6 +283,27 @@ function start() {
   ], ls.wave, (v) => wx.setWave(/** @type {any} */ (v)));
   checkbox(waveSec, it.layers.waveArrows, ls.waveArrows, (on) => wx.setToggle('waveArrows', on));
   checkbox(waveSec, it.layers.wavePeriods, ls.wavePeriods, (on) => wx.setToggle('wavePeriods', on));
+
+  // Correnti: scaricate solo quando il layer è attivo (quota Open-Meteo).
+  const curSec = menu.addSection(it.layers.currentsSection);
+  let currentsLoaded = false;
+  const loadCurrents = async () => {
+    if (currentsLoaded) return;
+    try {
+      const c = await weather.getCurrents();
+      currentsLoaded = true;
+      wx.setCurrents(c.field);
+    } catch (err) {
+      recordError(err);
+      notice.show(fill(it.notice.error, { msg: err?.message ?? String(err) }), 'error');
+    }
+  };
+  checkbox(curSec, it.layers.currents, ls.currents, (on) => {
+    wx.setToggle('currents', on);
+    if (on) loadCurrents();
+  });
+  curSec.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: it.layers.currentsHint }));
+  if (ls.currents) setTimeout(loadCurrents, 0);
 
   rangeRow(menu.addSection(it.layers.opacity), it.layers.opacity, {
     min: 0.1, max: 1, step: 0.05, value: ls.opacity, format: (v) => `${Math.round(v * 100)} %`,

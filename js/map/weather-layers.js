@@ -5,8 +5,9 @@ import { windFieldLayer } from './wind-field.js';
 import { windArrowsLayer } from './wind-arrows.js';
 import { windParticlesLayer } from './wind-particles.js';
 import { waveFieldLayer, waveArrowsLayer } from './wave-layer.js';
+import { currentLayer } from './current-layer.js';
 
-/** @typedef {'windField' | 'windArrows' | 'windParticles' | 'waveArrows' | 'wavePeriods'} ToggleId */
+/** @typedef {'windField' | 'windArrows' | 'windParticles' | 'waveArrows' | 'wavePeriods' | 'currents'} ToggleId */
 /** @typedef {'none' | import('./wave-layer.js').WaveKind} WaveChoice */
 
 /**
@@ -18,6 +19,7 @@ import { waveFieldLayer, waveArrowsLayer } from './wave-layer.js';
  * @property {WaveChoice} wave
  * @property {boolean} waveArrows
  * @property {boolean} wavePeriods
+ * @property {boolean} currents
  * @property {number} opacity
  */
 
@@ -29,6 +31,7 @@ export const DEFAULT_LAYER_SETTINGS = {
   wave: 'none',
   waveArrows: true,
   wavePeriods: false,
+  currents: false,
   opacity: 0.6,
 };
 
@@ -53,12 +56,15 @@ export function createWeatherLayers(map, saved, onChange) {
     windParticles: windParticlesLayer({ pane: particlesPane }),
     waveArrows: waveArrowsLayer({ pane: arrowsPane, kind }),
     windArrows: windArrowsLayer({ pane: arrowsPane }),
+    currents: currentLayer({ pane: arrowsPane }),
   };
 
   /** @type {import('../weather/grid.js').WeatherField | null} */
   let windData = null;
   /** @type {import('../weather/grid.js').WeatherField | null} */
   let waveData = null;
+  /** @type {import('../weather/grid.js').WeatherField | null} */
+  let currentData = null;
   let tMs = Date.now();
 
   /** @param {keyof typeof layers} id */
@@ -77,7 +83,7 @@ export function createWeatherLayers(map, saved, onChange) {
       if (map.hasLayer(layer)) map.removeLayer(layer);
       return;
     }
-    layer._field = id.startsWith('wind') ? windData : waveData;
+    layer._field = id.startsWith('wind') ? windData : id === 'currents' ? currentData : waveData;
     layer._tMs = tMs;
     if (!map.hasLayer(layer)) layer.addTo(map); else layer.redraw();
   }
@@ -99,6 +105,11 @@ export function createWeatherLayers(map, saved, onChange) {
     setWind(field) {
       windData = field;
       all();
+    },
+    /** @param {import('../weather/grid.js').WeatherField | null} field */
+    setCurrents(field) {
+      currentData = field;
+      refresh('currents');
     },
     /** @param {import('../weather/grid.js').WeatherField | null} field */
     setWaves(field) {

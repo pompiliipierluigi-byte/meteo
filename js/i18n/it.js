@@ -52,6 +52,9 @@ export const it = {
     waveSwell: 'Swell (onda lunga)',
     waveArrows: 'Frecce di direzione',
     wavePeriods: 'Etichette del periodo (s)',
+    currents: 'Correnti superficiali',
+    currentsSection: 'Correnti',
+    currentsHint: 'Scaricate quando attivi il layer (circa 1–2 minuti la prima volta).',
   },
   probe: {
     wind: 'Vento',
@@ -246,6 +249,7 @@ export const it = {
   legend: {
     wind: 'Vento (nodi)',
     wave: 'Onda (m)',
+    current: 'Corrente (kn)',
   },
   time: {
     label: 'Ora della previsione',
