@@ -9,7 +9,8 @@ import { errorMessage } from '../data/supabase.js';
 import { fill } from '../lib/text.js';
 import { modelLabel } from '../weather/models.js';
 import { departureTimes, runDepartureWindow } from '../routing/departure-window.js';
-import { categorize } from '../routing/departure-categories.js';
+import { categorize, CATEGORIES } from '../routing/departure-categories.js';
+import { windowChart, CHART_COLORS } from './window-chart.js';
 
 /**
  * Dipendenze per il calcolo.
@@ -409,22 +410,56 @@ export function createRoutePanel(host, topbar, points, deps) {
     windowBox.replaceChildren();
     if (!win) return;
     windowBox.append(el('h3', 'route-window-title', t.windowTitle), el('p', 'route-disclaimer', `⚠️ ${it.disclaimer.bar}`));
-    const list = el('div', 'route-window-list');
-    const hm = formatHm;
     // Categorie solo a finestra completa (prima cambierebbero a ogni run).
     const complete = win.runs.filter(Boolean).length === win.departures.length;
-    const cls = complete ? categorize(win.runs, { limits: win.limits, waveWarningM: win.waveWarningM }).runs : null;
-    win.departures.forEach((d, i) => {
-      const run = win.runs[i];
-      const tags = cls ? [...cls[i].categories.map((k) => t.categories[k]), ...(cls[i].status === 'limit' ? [t.outOfLimits] : [])] : [];
-      const label = !run ? `${formatShortDateTime(d)} …`
-        : run.error ? `${formatShortDateTime(d)} — ${t.windowNotFound}`
-          : `${formatShortDateTime(d)} — ${hm(run.summary.duration_h)} h, ${t.motorShort} ${hm(run.summary.motor_h)}, ${fmtNum(run.summary.max_tws_kn, 0)} kn${tags.length ? ` · ${tags.join(', ')}` : ''}`;
-      const b = btn(label, () => selectRun(i), win.selected === i ? 'btn-small active' : 'btn-small');
-      b.disabled = !run;
-      list.append(b);
-    });
-    windowBox.append(list);
+    const cls = complete ? categorize(win.runs, { limits: win.limits, waveWarningM: win.waveWarningM }) : null;
+    const wrap = el('div', 'window-chart-wrap');
+    wrap.append(windowChart({
+      departures: win.departures,
+      runs: win.runs,
+      classes: cls?.runs ?? null,
+      selected: win.selected,
+      onSelect: selectRun,
+      labels: { title: t.windowTitle, h: 'h', kn: 'kn', m: 'm', notFound: t.windowNotFound, limit: t.outOfLimits, pending: t.windowPending, categories: t.categories },
+    }));
+    windowBox.append(wrap);
+    // Legenda delle serie.
+    const legend = el('div', 'window-legend');
+    const key = (color, text, kind = 'box') => {
+      const k = el('span', `wl-item wl-${kind}`);
+      const sw = el('i', '');
+      sw.style.background = color;
+      k.append(sw, document.createTextNode(text));
+      legend.append(k);
+    };
+    key(CHART_COLORS.sail, t.legend.duration);
+    key(CHART_COLORS.motor, t.legend.motor);
+    key(CHART_COLORS.wind, t.legend.wind, 'line');
+    key(CHART_COLORS.gust, t.legend.gust, 'line');
+    key(CHART_COLORS.wave, t.legend.wave, 'line');
+    key(CHART_COLORS.limit, t.outOfLimits);
+    windowBox.append(legend);
+    // Categorie: pulsanti che selezionano la partenza.
+    if (cls) {
+      const cats = el('div', 'window-cats');
+      for (const k of CATEGORIES) {
+        const i = cls.best[k];
+        const row = el('button', `wc-cat${i !== null && i === win.selected ? ' active' : ''}`);
+        /** @type {HTMLButtonElement} */ (row).type = 'button';
+        const dot = el('i', '');
+        dot.style.background = CHART_COLORS.categories[k];
+        const s = i !== null ? win.runs[i]?.summary : null;
+        row.append(dot, el('strong', '', t.categories[k]), el('span', '', i === null || !s
+          ? `${t.categoryHints[k]} — ${t.windowNone}`
+          : `${formatShortDateTime(win.departures[i])} · ${formatHm(s.duration_h)} h · ${t.motorShort} ${formatHm(s.motor_h)} — ${t.categoryHints[k]}`));
+        if (i !== null) row.addEventListener('click', () => selectRun(/** @type {number} */ (i)));
+        else /** @type {HTMLButtonElement} */ (row).disabled = true;
+        cats.append(row);
+      }
+      windowBox.append(cats);
+      const nf = win.runs.filter((r) => r?.error).length;
+      if (nf) windowBox.append(el('small', 'muted', fill(t.windowNotFoundCount, { n: nf })));
+    }
     if (win.info.secs) windowBox.append(el('small', 'muted', fill(t.windowMeta, { secs: win.info.secs.toFixed(0) })));
   }
 
