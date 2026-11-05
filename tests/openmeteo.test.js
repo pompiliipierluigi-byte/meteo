@@ -92,3 +92,12 @@ test('campo marino del routing: corrente da km/h a nodi, verso di destinazione',
   assert.equal(f.vars.wave_h[0], Number(Math.fround(1.2)));
   assert.ok(Math.abs(f.vars.wave_dy[0] - 1) < 1e-6);
 });
+
+test('campo temperatura del mare dalle serie', async () => {
+  const { sstField } = await import('../js/weather/openmeteo.js');
+  const grid = { id: 'g', lat0: 40, lon0: 12, dLat: 1, dLon: 1, nx: 2, ny: 1 };
+  const f = sstField(grid, [1], { timesMs: [0, 3600e3], series: { sea_surface_temperature: [[18.5, null]] } });
+  assert.equal(f.vars.sst[1], 18.5);
+  assert.ok(Number.isNaN(f.vars.sst[3]));
+  assert.ok(Number.isNaN(f.vars.sst[0]));
+});

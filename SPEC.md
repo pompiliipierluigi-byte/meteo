@@ -50,6 +50,10 @@ PWA per pianificare traversate a vela in Adriatico, sul modello di PredictWind, 
 - Tre layer attivabili dal menu: **onda totale**, **onda da vento**, **swell** (ciascuno con altezza, direzione, periodo).
 - Layer **correnti** superficiali (velocità in nodi e direzione di destinazione), da fase 3.
 
+### 2.3.1 Temperatura del mare
+
+- Layer facoltativo (2026-11-05): temperatura superficiale del mare (°C) da Open-Meteo Marine (`sea_surface_temperature`), sulla griglia panoramica, scaricata solo quando il layer è attivo; scala 10–28 °C con legenda; valore nella sonda.
+
 ### 2.4 Cursore temporale e modello
 
 - Cursore orario dall'ora corrente fino a **+5 giorni** (orizzonte massimo per mappa e routing); pulsanti ±1 h, ±1 giorno, "play".

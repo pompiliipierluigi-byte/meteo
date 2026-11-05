@@ -5,8 +5,9 @@ import { windFieldLayer } from './wind-field.js';
 import { windArrowsLayer } from './wind-arrows.js';
 import { waveFieldLayer, waveArrowsLayer } from './wave-layer.js';
 import { currentLayer } from './current-layer.js';
+import { sstLayer } from './sst-layer.js';
 
-/** @typedef {'windField' | 'windArrows' | 'waveArrows' | 'wavePeriods' | 'currents'} ToggleId */
+/** @typedef {'windField' | 'windArrows' | 'waveArrows' | 'wavePeriods' | 'currents' | 'sst'} ToggleId */
 /** @typedef {'none' | import('./wave-layer.js').WaveKind} WaveChoice */
 
 /**
@@ -19,6 +20,7 @@ import { currentLayer } from './current-layer.js';
  * @property {boolean} waveArrows
  * @property {boolean} wavePeriods
  * @property {boolean} currents
+ * @property {boolean} sst temperatura del mare
  * @property {number} opacity
  */
 
@@ -34,6 +36,7 @@ export const DEFAULT_LAYER_SETTINGS = {
   waveArrows: true,
   wavePeriods: false,
   currents: false,
+  sst: false,
   // 50 %: la mappa sotto (costa, porti) resta leggibile (2026-11-05).
   opacity: 0.5,
 };
@@ -55,7 +58,7 @@ export function createWeatherLayers(map, saved, onChange) {
   /** @type {LayerSettings} */
   const st = {
     ...DEFAULT_LAYER_SETTINGS,
-    ...(fresh ? saved : v2 ? { ...saved, opacity: undefined } : { wave: saved?.wave, waveArrows: saved?.waveArrows, wavePeriods: saved?.wavePeriods, currents: saved?.currents }),
+    ...(fresh ? saved : v2 ? { ...saved, opacity: undefined } : { wave: saved?.wave, waveArrows: saved?.waveArrows, wavePeriods: saved?.wavePeriods, currents: saved?.currents, sst: saved?.sst }),
   };
   for (const k of Object.keys(st)) if (st[k] === undefined) st[k] = DEFAULT_LAYER_SETTINGS[k];
   delete st.windParticles;
@@ -63,7 +66,9 @@ export function createWeatherLayers(map, saved, onChange) {
   if (!['arrows', 'barbs'].includes(st.windSymbol)) st.windSymbol = 'arrows';
 
   const kind = st.wave === 'none' ? 'wave' : st.wave;
+  // Ordine di disegno: temperatura del mare sotto onda e vento.
   const layers = {
+    sst: sstLayer({ pane: fieldPane, opacity: st.opacity }),
     waveField: waveFieldLayer({ pane: fieldPane, opacity: st.opacity, kind }),
     windField: windFieldLayer({ pane: fieldPane, opacity: st.opacity }),
     waveArrows: waveArrowsLayer({ pane: arrowsPane, kind }),
@@ -77,6 +82,8 @@ export function createWeatherLayers(map, saved, onChange) {
   let waveData = null;
   /** @type {import('../weather/grid.js').WeatherField | null} */
   let currentData = null;
+  /** @type {import('../weather/grid.js').WeatherField | null} */
+  let sstData = null;
   let tMs = Date.now();
 
   /** @param {keyof typeof layers} id */
@@ -95,7 +102,7 @@ export function createWeatherLayers(map, saved, onChange) {
       if (map.hasLayer(layer)) map.removeLayer(layer);
       return;
     }
-    layer._field = id.startsWith('wind') ? windData : id === 'currents' ? currentData : waveData;
+    layer._field = id.startsWith('wind') ? windData : id === 'currents' ? currentData : id === 'sst' ? sstData : waveData;
     layer._tMs = tMs;
     if (!map.hasLayer(layer)) layer.addTo(map); else layer.redraw();
   }
@@ -116,6 +123,11 @@ export function createWeatherLayers(map, saved, onChange) {
     setWind(field) {
       windData = field;
       all();
+    },
+    /** @param {import('../weather/grid.js').WeatherField | null} field */
+    setSst(field) {
+      sstData = field;
+      refresh('sst');
     },
     /** @param {import('../weather/grid.js').WeatherField | null} field */
     setCurrents(field) {
@@ -161,6 +173,7 @@ export function createWeatherLayers(map, saved, onChange) {
       st.opacity = opacity;
       layers.windField.setOpacity(opacity);
       layers.waveField.setOpacity(opacity);
+      layers.sst.setOpacity(opacity);
       changed();
     },
     /** @returns {LayerSettings} */

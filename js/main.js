@@ -61,6 +61,8 @@ const state = {
   tMs: Math.floor(Date.now() / 3600e3) * 3600e3,
   wind: null,
   waves: null,
+  /** @type {import('./weather/weather-service.js').WaveResult | null} */
+  sst: null,
 };
 
 function start() {
@@ -273,6 +275,7 @@ function start() {
     wind: s.windField || s.windArrows,
     wave: s.wave === 'none' ? null : waveNames[s.wave],
     current: s.currents,
+    sst: s.sst,
   });
   const wx = createWeatherLayers(mapCtl.map, getPref('layers', {}), (s) => {
     setPref('layers', s);
@@ -319,6 +322,29 @@ function start() {
   });
   curSec.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: it.layers.currentsHint }));
   if (ls.currents) setTimeout(loadCurrents, 0);
+
+  // Temperatura del mare: come le correnti, scaricata solo quando serve.
+  const sstSec = menu.addSection(it.layers.sst);
+  let sstLoaded = false;
+  const loadSst = async () => {
+    if (sstLoaded) return;
+    try {
+      const r = await weather.getSst();
+      sstLoaded = true;
+      state.sst = r;
+      wx.setSst(r.field);
+      probe.refresh();
+    } catch (err) {
+      recordError(err);
+      notice.show(fill(it.notice.error, { msg: err?.message ?? String(err) }), 'error');
+    }
+  };
+  checkbox(sstSec, it.layers.sst, ls.sst, (on) => {
+    wx.setToggle('sst', on);
+    if (on) loadSst();
+  });
+  sstSec.append(Object.assign(document.createElement('small'), { className: 'field-hint', textContent: it.layers.sstHint }));
+  if (ls.sst) setTimeout(loadSst, 0);
 
   rangeRow(menu.addSection(it.layers.opacity), it.layers.opacity, {
     min: 0.1, max: 1, step: 0.05, value: ls.opacity, format: (v) => `${Math.round(v * 100)} %`,

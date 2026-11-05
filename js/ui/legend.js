@@ -1,6 +1,6 @@
 // Legenda delle scale colori (vento in nodi, onda in metri), in basso a sinistra sulla mappa.
 
-import { WIND_STOPS, WAVE_STOPS, CURRENT_STOPS, css } from '../map/colors.js';
+import { WIND_STOPS, WAVE_STOPS, CURRENT_STOPS, SST_STOPS, css } from '../map/colors.js';
 import { it } from '../i18n/it.js';
 import { getPref, setPref } from '../lib/prefs.js';
 
@@ -10,8 +10,9 @@ import { getPref, setPref } from '../lib/prefs.js';
  * @returns {string}
  */
 function gradient(stops) {
-  const max = stops[stops.length - 1][0];
-  return `linear-gradient(to right, ${stops.map(([v, c]) => `${css(c)} ${((v / max) * 100).toFixed(1)}%`).join(', ')})`;
+  const min = stops[0][0];
+  const span = stops[stops.length - 1][0] - min;
+  return `linear-gradient(to right, ${stops.map(([v, c]) => `${css(c)} ${(((v - min) / span) * 100).toFixed(1)}%`).join(', ')})`;
 }
 
 /**
@@ -21,12 +22,13 @@ function gradient(stops) {
  * @returns {HTMLElement}
  */
 function scale(title, stops, label) {
-  const max = stops[stops.length - 1][0];
+  const min = stops[0][0];
+  const span = stops[stops.length - 1][0] - min;
   const el = document.createElement('div');
   el.className = 'legend-scale';
   const ticks = stops.map(([v], i) => {
     const text = i === stops.length - 1 ? `${label(v)}+` : label(v);
-    return `<span style="left:${((v / max) * 100).toFixed(1)}%">${text}</span>`;
+    return `<span style="left:${(((v - min) / span) * 100).toFixed(1)}%">${text}</span>`;
   }).join('');
   el.innerHTML = `<div class="legend-title"></div><div class="legend-bar" style="background:${gradient(stops)}"></div><div class="legend-ticks">${ticks}</div>`;
   el.querySelector('.legend-title').textContent = title;
@@ -35,7 +37,7 @@ function scale(title, stops, label) {
 
 /**
  * @param {HTMLElement} mapEl contenitore della mappa
- * @returns {{update: (show: {wind: boolean, wave: string | null, current?: boolean}) => void}}
+ * @returns {{update: (show: {wind: boolean, wave: string | null, current?: boolean, sst?: boolean}) => void}}
  */
 export function createLegend(mapEl) {
   const root = document.createElement('div');
@@ -73,7 +75,8 @@ export function createLegend(mapEl) {
   const wind = scale(it.legend.wind, WIND_STOPS, (v) => String(v));
   const wave = scale(it.legend.wave, WAVE_STOPS, (v) => String(v));
   const current = scale(it.legend.current, CURRENT_STOPS, (v) => String(v));
-  box.append(hide, wind, wave, current);
+  const sst = scale(it.legend.sst, SST_STOPS, (v) => String(v));
+  box.append(hide, wind, wave, current, sst);
   root.append(tab, box);
   mapEl.append(root);
   apply();
@@ -83,7 +86,8 @@ export function createLegend(mapEl) {
       wave.classList.toggle('hidden', !show.wave);
       if (show.wave) wave.querySelector('.legend-title').textContent = `${it.legend.wave} — ${show.wave}`;
       current.classList.toggle('hidden', !show.current);
-      root.classList.toggle('hidden', !show.wind && !show.wave && !show.current);
+      sst.classList.toggle('hidden', !show.sst);
+      root.classList.toggle('hidden', !show.wind && !show.wave && !show.current && !show.sst);
     },
   };
 }

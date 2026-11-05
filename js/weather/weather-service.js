@@ -5,8 +5,8 @@ import { BBOX, HORIZON_H, MARINE, MODELS, PANORAMIC_STEP_DEG } from '../config.j
 import { makeGrid, gridPoint, maskedIndices, fillNearest } from './grid.js';
 import { SEA_MASK_GRID_ID, SEA_MASK_BITS } from './sea-mask.js';
 import {
-  fetchPoints, fetchLastRunMs, windField, waveField, routeMarineField,
-  WIND_VARS, WAVE_VARS, WAVE_FIELD_VARS, CURRENT_VARS, ROUTE_MARINE_VARS,
+  fetchPoints, fetchLastRunMs, windField, waveField, routeMarineField, sstField,
+  WIND_VARS, WAVE_VARS, WAVE_FIELD_VARS, CURRENT_VARS, ROUTE_MARINE_VARS, SST_VARS,
 } from './openmeteo.js';
 import { corridorGrid } from './corridor.js';
 import { distanceNm } from '../routing/geo.js';
@@ -21,6 +21,7 @@ const ICON_SAFE_HORIZON_H = 54;
 function sourceSpec(source) {
   if (source === 'marine') return { kind: 'marine', vars: WAVE_VARS, build: waveField, fill: WAVE_FIELD_VARS, cfg: MARINE };
   if (source === 'currents') return { kind: 'marine', vars: CURRENT_VARS, build: routeMarineField, fill: ['cur_u', 'cur_v'], cfg: { ...MARINE, label: 'Correnti' } };
+  if (source === 'sst') return { kind: 'marine', vars: SST_VARS, build: sstField, fill: ['sst'], cfg: { ...MARINE, label: 'Temperatura del mare' } };
   if (source === 'route-marine') return { kind: 'marine', vars: ROUTE_MARINE_VARS, build: routeMarineField, fill: null, cfg: MARINE };
   const m = MODELS[source];
   if (!m) throw new Error(`Sorgente sconosciuta: ${source}`);
@@ -203,6 +204,21 @@ export class WeatherService extends EventTarget {
       runs: Object.fromEntries(Object.entries(loaded).map(([id, l]) => [id, l.entry.runMs])),
       fetchedMs: Math.min(...parts.map((l) => l.entry.fetchedMs)),
       stale: parts.find((l) => l.error)?.error ?? null,
+    };
+  }
+
+  /**
+   * Temperatura superficiale del mare sulla griglia della mappa (scaricata solo se il layer è attivo).
+   * @param {{force?: boolean}} [opts]
+   * @returns {Promise<WaveResult>}
+   */
+  async getSst(opts = {}) {
+    const l = await this.load('sst', opts);
+    return {
+      field: { grid: l.entry.grid, timesMs: l.entry.timesMs, vars: l.entry.vars },
+      runMs: l.entry.runMs,
+      fetchedMs: l.entry.fetchedMs,
+      stale: l.error,
     };
   }
 
